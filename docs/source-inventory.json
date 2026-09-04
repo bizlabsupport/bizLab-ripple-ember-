@@ -1,0 +1,90 @@
+{
+  "captured": "2026-09-04",
+  "project": "dhizayohljxioxxzkhty",
+  "functions": [
+    {
+      "slug": "admin-operations",
+      "version": 26,
+      "verify_jwt": false,
+      "files": [
+        "admin-operations/index.ts"
+      ]
+    },
+    {
+      "slug": "send-postcards",
+      "version": 18,
+      "verify_jwt": false,
+      "files": [
+        "functions/send-postcards/index.ts",
+        "functions/_shared/thanksio.ts",
+        "functions/_shared/address.ts",
+        "functions/_shared/qrsign.ts"
+      ]
+    },
+    {
+      "slug": "provision-thanksio",
+      "version": 15,
+      "verify_jwt": false,
+      "files": [
+        "provision-thanksio/index.ts"
+      ]
+    },
+    {
+      "slug": "landing",
+      "version": 22,
+      "verify_jwt": false,
+      "files": [
+        "functions/landing/index.ts",
+        "functions/_shared/qrsign.ts",
+        "functions/_shared/address.ts"
+      ]
+    },
+    {
+      "slug": "ghl-intake",
+      "version": 17,
+      "verify_jwt": false,
+      "files": [
+        "functions/ghl-intake/index.ts",
+        "functions/_shared/address.ts"
+      ]
+    },
+    {
+      "slug": "drain-queue",
+      "version": 8,
+      "verify_jwt": false,
+      "files": [
+        "drain-queue/index.ts"
+      ]
+    },
+    {
+      "slug": "ember-fieldroutes-webhook",
+      "version": 7,
+      "verify_jwt": false,
+      "files": [
+        "index.ts",
+        "deno.json"
+      ]
+    },
+    {
+      "slug": "ember-operations",
+      "version": 3,
+      "verify_jwt": true,
+      "files": [
+        "index.ts",
+        "deno.json"
+      ]
+    },
+    {
+      "slug": "ember-fieldroutes-backfill",
+      "version": 2,
+      "verify_jwt": false,
+      "files": [
+        "index.ts",
+        "deno.json"
+      ]
+    }
+  ],
+  "recordedMigrationCount": 23,
+  "frontendSource": "Local uploaded HTML snapshots; not fetched from HighLevel.",
+  "missing": "Baseline migrations before 0029 except local 0028; complete workflow collection; login page; provider configuration, scheduled jobs, secrets and live customer data excluded."
+}

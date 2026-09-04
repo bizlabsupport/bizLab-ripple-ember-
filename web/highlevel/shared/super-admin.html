@@ -1,0 +1,1905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ripple - Super Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #24313D; --muted: #5F6E7B;
+    --coral: #B01657; --coral-deep: #8A1044; --coral-wash: #FBEAF1;
+    --blue: #007DC9; --blue-tint: #E5F2FB;
+    --kraft: #D9B77E; --sky: #EAF4FA;
+    --navy: #00263D; --navy-deep: #001625;
+    --paper: #FFFFFF; --line: #E3E9EE; --bg: #F4F8FB;
+    --good: #2E9E6B; --good-wash: #E3F5EC;
+    --warn: #C9821A; --warn-wash: #FBF0DC;
+    --ember: #F4742B; --ember-deep: #D95D18; --ember-wash: #FFF0E4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Nunito Sans', system-ui, sans-serif; color: var(--ink);
+    background: var(--bg); min-height: 100vh;
+  }
+  h1, h2, h3, .display { font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; line-height: 1.1; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  a { color: inherit; }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* top bar */
+  .bar { background: #fff; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
+  .bar-in { max-width: 1180px; margin: 0 auto; height: 60px; padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between; }
+  .brand-row { display: flex; align-items: center; gap: 11px; }
+  .brand-mark { width: 34px; height: 34px; border-radius: 9px; overflow: hidden;
+    display: grid; place-items: center; }
+  .brand-mark svg { width: 20px; height: 20px; }
+  .brand-name { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 18px; color: var(--navy); }
+  .brand-sub { font-size: 10.5px; color: var(--muted); font-weight: 800; letter-spacing: 0.05em; margin-top: -3px; }
+  .bar-right { display: flex; align-items: center; gap: 10px; }
+  .owner-chip { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--coral-deep);
+    background: var(--coral-wash); padding: 5px 11px; border-radius: 999px; border: 1px solid #F0C9DA; font-weight: 700; }
+  .owner-chip svg { width: 13px; height: 13px; }
+  .avatar { width: 32px; height: 32px; border-radius: 999px; background: var(--navy); color: #fff;
+    display: grid; place-items: center; font-size: 13px; font-weight: 800; }
+
+  /* layout */
+  .page { max-width: 1180px; margin: 0 auto; padding: 26px 24px 64px; }
+  .page-head { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
+  .page-head h1 { font-size: 27px; font-weight: 800; color: var(--navy); }
+  .page-head p { font-size: 13.5px; color: var(--muted); margin-top: 5px; }
+  .head-actions { display: flex; gap: 10px; align-items: center; }
+
+  .btn { display: inline-flex; align-items: center; gap: 7px; font-weight: 700; font-size: 13.5px;
+    padding: 10px 16px; border-radius: 9px; border: 1px solid transparent; text-decoration: none;
+    background: var(--navy); color: #fff; transition: filter .15s; }
+  .btn:hover { filter: brightness(1.12); }
+  .btn svg { width: 16px; height: 16px; }
+  .btn.primary { background: var(--coral); }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  .btn.danger { background: var(--coral-wash); color: var(--coral); border-color: #F0C9DA; }
+  .btn.sm { padding: 6px 11px; font-size: 12.5px; }
+  .btn.sm svg { width: 14px; height: 14px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; }
+
+  /* stat strip */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+  .stat { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .stat-l { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 700; }
+  .stat-l svg { width: 14px; height: 14px; }
+  .stat-v { font-size: 24px; font-weight: 800; margin-top: 7px; }
+
+  /* controls */
+  .controls { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .search { position: relative; flex: 1; min-width: 220px; }
+  .search svg { position: absolute; left: 12px; top: 11px; width: 16px; height: 16px; color: var(--muted); }
+  .search input { width: 100%; padding: 10px 12px 10px 36px; font-size: 14px; font-family: inherit; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 9px; outline: none; }
+  .search input:focus { border-color: var(--blue); }
+  .segbar { display: flex; gap: 6px; background: #fff; padding: 4px; border: 1px solid var(--line); border-radius: 10px; }
+  .seg { border: none; padding: 6px 13px; border-radius: 7px; font-size: 12.5px; font-weight: 700;
+    text-transform: capitalize; background: transparent; color: var(--ink); }
+  .seg.on { background: var(--navy); color: #fff; }
+
+  /* table */
+  .table { background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: visible; position: relative; }
+  .thead, .trow { display: grid; grid-template-columns: 2.1fr 0.9fr 1.3fr 1fr 168px; align-items: center; }
+  .thead { padding: 11px 18px; border-bottom: 1px solid var(--line); background: var(--bg);
+    font-size: 11px; font-weight: 800; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+  .trow { padding: 15px 18px; border-bottom: 1px solid var(--line); position: relative; }
+  .trow:last-child { border-bottom: none; }
+  .tname { display: flex; align-items: flex-start; gap: 11px; }
+  .dot { width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0; margin-top: 6px; }
+  .tname .n { font-weight: 800; font-size: 14.5px; }
+  .tname .m { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .tval .v { font-weight: 800; font-size: 14px; }
+  .tval .s { font-size: 11.5px; color: var(--muted); }
+
+  /* readiness chips under the location name */
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+  .chips .pill { font-size: 10.5px; padding: 2px 8px; }
+
+  .pill { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; text-transform: capitalize;
+    white-space: nowrap; display: inline-block; border: 1px solid; }
+  .pill.neutral { background: var(--bg); color: var(--ink); border-color: var(--line); }
+  .pill.good { background: var(--good-wash); color: var(--good); border-color: #BFE6D2; }
+  .pill.warn { background: var(--warn-wash); color: var(--warn); border-color: #EFD9AE; }
+  .pill.blue { background: var(--blue-tint); color: var(--blue); border-color: #B9DDF3; }
+  .pill.coral { background: var(--coral-wash); color: var(--coral); border-color: #F0C9DA; }
+  .pill.ember { background: var(--ember-wash); color: var(--ember-deep); border-color: #F7CCAE; }
+
+  /* shared product navigation: Ripple stays intact; Ember is its own module */
+  .product-nav { max-width: 1180px; margin: 0 auto; padding: 13px 24px 0; display: flex; align-items: flex-end; gap: 8px; }
+  .product-tab { border: 1px solid var(--line); background: #fff; color: var(--muted); border-radius: 10px 10px 0 0;
+    padding: 9px 15px; font-size: 12.5px; font-weight: 800; display: inline-flex; align-items: center; gap: 7px; }
+  .product-tab.on { color: var(--navy); border-bottom-color: #fff; box-shadow: 0 -2px 8px rgba(0,22,37,.04); }
+  .product-tab[data-product="ripple"].on { color: var(--coral-deep); }
+  .product-tab[data-product="ember"].on { color: var(--ember-deep); }
+  .product-tab .mini-flame { width: 18px; height: 18px; display: grid; place-items: center;
+    border-radius: 6px; background: var(--ember-wash); font-size: 11px; }
+  .product-nav-actions { margin-left: auto; padding-bottom: 5px; }
+  .product-nav-actions .btn { padding: 8px 13px; }
+
+  /* Ember super-admin view */
+  .ember-head h1 { color: var(--ember-deep); }
+  .btn.ember-primary { background: var(--ember); }
+  .ember-stats .stat-v { color: var(--ember-deep); }
+  .ember-table .thead, .ember-table .trow { grid-template-columns: 2fr 1.1fr 1fr 1.2fr 190px; }
+  .ember-empty { padding: 42px 24px; text-align: center; }
+  .ember-empty .flame { width: 46px; height: 46px; display: grid; place-items: center; margin: 0 auto 12px;
+    border-radius: 14px; background: var(--ember-wash); font-size: 23px; }
+  .ember-empty h3 { color: var(--navy); font-size: 17px; }
+  .ember-empty p { max-width: 530px; margin: 7px auto 0; color: var(--muted); font-size: 12.5px; line-height: 1.55; }
+  .product-pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 7px; }
+  .ember-setup-note { background: var(--ember-wash); border: 1px solid #F7CCAE; color: var(--ink);
+    border-radius: 11px; padding: 12px 14px; font-size: 12.5px; line-height: 1.55; margin-bottom: 16px; }
+
+  .kebab { background: transparent; border: 1px solid transparent; border-radius: 8px; width: 32px; height: 32px;
+    display: grid; place-items: center; margin-left: auto; }
+  .kebab:hover, .kebab.open { background: var(--bg); border-color: var(--line); }
+  .kebab svg { width: 16px; height: 16px; color: var(--ink); }
+  .menu { position: absolute; right: 18px; top: 50px; z-index: 50; background: #fff; border: 1px solid var(--line);
+    border-radius: 11px; box-shadow: 0 12px 32px rgba(0,22,37,0.16); width: 210px; overflow: hidden; }
+  .menu button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 13px; border: none;
+    background: transparent; font-size: 13px; color: var(--ink); text-align: left; }
+  .menu button:hover { background: var(--bg); }
+  .menu button svg { width: 15px; height: 15px; }
+  .menu button.danger { color: var(--coral); }
+
+  .note { font-size: 11.5px; color: var(--muted); margin-top: 14px; line-height: 1.6; }
+  .empty { padding: 44px 18px; text-align: center; color: var(--muted); }
+  .empty svg { width: 26px; height: 26px; opacity: 0.5; }
+
+  /* modal */
+  .scrim { position: fixed; inset: 0; background: rgba(0,22,37,0.42); z-index: 50; display: flex;
+    align-items: flex-start; justify-content: center; padding: 6vh 16px; backdrop-filter: blur(2px); }
+  .modal { width: 100%; background: #fff; border-radius: 16px; box-shadow: 0 24px 60px rgba(0,22,37,0.28);
+    overflow: hidden; animation: pop .18s ease-out; max-height: 88vh; display: flex; flex-direction: column; }
+  @keyframes pop { from { transform: translateY(-8px); opacity: 0 } to { transform: none; opacity: 1 } }
+  .modal-head { padding: 18px 22px; border-bottom: 1px solid var(--line); display: flex;
+    justify-content: space-between; align-items: flex-start; flex-shrink: 0; }
+  .modal-head .t { font-size: 17px; font-weight: 700; color: var(--navy); }
+  .modal-head .s { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .x { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; width: 30px; height: 30px;
+    display: grid; place-items: center; }
+  .x svg { width: 16px; height: 16px; color: var(--ink); }
+  .modal-body { padding: 22px; overflow-y: auto; }
+
+  .field { display: block; margin-bottom: 16px; }
+  .field > .lbl { font-size: 12.5px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .field input, .field select { width: 100%; padding: 10px 12px; font-size: 14px; font-family: inherit; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 9px; outline: none; background: #fff; }
+  .field input:focus, .field select:focus { border-color: var(--blue); }
+  .field input[readonly] { background: var(--bg); color: var(--muted); }
+  .field input.bad, .field select.bad { border-color: var(--coral); }
+  .hint { font-size: 11.5px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+  .hint code { font-size: 11px; color: var(--coral); }
+  .err { font-size: 11.5px; color: var(--coral); font-weight: 700; margin-top: 5px; }
+  .row2 { display: flex; gap: 14px; }
+  .row2 > * { flex: 1; }
+  .actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+  .actions.split { justify-content: space-between; align-items: center; }
+
+  /* section headers inside the config modal */
+  .sect { font-size: 11px; font-weight: 800; color: var(--muted); letter-spacing: 0.07em;
+    text-transform: uppercase; padding-bottom: 8px; border-bottom: 1px solid var(--line); margin: 4px 0 14px; }
+  .sect + .field { margin-top: 0; }
+  .sect.spaced { margin-top: 24px; }
+  .inline { display: flex; gap: 8px; align-items: center; }
+  .inline > input, .inline > select { flex: 1; min-width: 0; }
+  .inline > .btn { flex-shrink: 0; }
+  .linkout { font-size: 12px; font-weight: 700; color: var(--blue); text-decoration: none; white-space: nowrap; }
+  .linkout:hover { text-decoration: underline; }
+  .linkout[aria-disabled="true"] { color: var(--muted); pointer-events: none; }
+  .toggle { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .toggle input[type="checkbox"] { width: auto; flex: 0 0 auto; margin: 0; accent-color: var(--coral); }
+
+  .planpick { display: flex; gap: 8px; }
+  .planpick button { flex: 1; padding: 9px 0; border-radius: 8px; font-size: 13px; font-weight: 700;
+    text-transform: capitalize; border: 1px solid var(--line); background: #fff; color: var(--ink); }
+  .planpick button.on { border-color: var(--coral); background: var(--coral-wash); color: var(--coral-deep); }
+
+  .usage { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; margin-bottom: 20px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 11px; padding: 14px; }
+  .usage .u-l { font-size: 11px; color: var(--muted); font-weight: 700; }
+  .usage .u-v { font-size: 18px; font-weight: 800; margin-top: 2px; }
+
+  .userrow { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+  .userrow:last-child { border-bottom: none; }
+  .userrow .who { display: flex; align-items: center; gap: 10px; }
+  .uav { width: 30px; height: 30px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line);
+    display: grid; place-items: center; font-size: 12px; font-weight: 800; color: var(--ink); }
+  .loc-role { font-weight: 700; padding: 3px 9px; border-radius: 999px; border: 1px solid; text-transform: capitalize; }
+  .role-admin { background: var(--coral-wash); color: var(--coral); border-color: #F0C9DA; }
+  .role-viewer { background: var(--bg); color: var(--muted); border-color: var(--line); }
+  .info-box { font-size: 12px; color: var(--ink); background: var(--blue-tint); border: 1px solid #B9DDF3;
+    border-radius: 10px; padding: 10px 13px; margin-bottom: 18px; line-height: 1.55; }
+  .warn-box { display: flex; gap: 9px; align-items: flex-start; background: var(--warn-wash); border: 1px solid #EFD9AE;
+    border-radius: 11px; padding: 14px; margin-bottom: 18px; font-size: 12.5px; color: var(--ink); line-height: 1.55; }
+  .warn-box svg { width: 17px; height: 17px; color: var(--warn); flex-shrink: 0; margin-top: 1px; }
+  .good-box { background: var(--good-wash); border: 1px solid #BFE6D2; border-radius: 11px; padding: 15px; margin-bottom: 18px; }
+  .good-box .h { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--good); font-size: 13.5px; }
+  .good-box .h svg { width: 16px; height: 16px; }
+  .kv { display: flex; justify-content: space-between; align-items: center; font-size: 13px; margin-top: 9px; }
+  .kv .k { color: var(--muted); }
+  .kv .val { font-weight: 700; display: flex; align-items: center; gap: 7px; }
+
+  /* toast */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--navy); color: #fff;
+    padding: 11px 18px; border-radius: 10px; font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 9px;
+    box-shadow: 0 10px 30px rgba(0,22,37,0.3); z-index: 60; animation: pop .2s ease-out; }
+  .toast svg { width: 16px; height: 16px; color: #7DE6B0; }
+
+
+  /* row actions */
+  .rowacts { display: flex; gap: 7px; justify-content: flex-end; }
+
+  /* manage workspace: nav on the left, one pane at a time, one save */
+  .modal.wide { max-height: 92vh; }
+  .ws { display: flex; flex: 1; min-height: 0; }
+  .ws-nav { width: 200px; flex-shrink: 0; background: var(--bg); border-right: 1px solid var(--line);
+    padding: 12px 10px; overflow-y: auto; }
+  .ws-nav .grp { font-size: 10px; font-weight: 800; color: var(--muted); letter-spacing: 0.07em;
+    text-transform: uppercase; padding: 12px 11px 6px; }
+  .ws-nav button { width: 100%; display: flex; align-items: center; gap: 9px; padding: 9px 11px;
+    border: none; background: transparent; border-radius: 9px; font-size: 13px; font-weight: 700;
+    color: var(--muted); text-align: left; }
+  .ws-nav button:hover { color: var(--ink); }
+  .ws-nav button svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .ws-nav button.on { background: #fff; color: var(--navy); box-shadow: 0 1px 3px rgba(0,22,37,0.09); }
+  .ws-nav button.warnish { color: var(--warn); }
+  .ws-nav button.dangerish { color: var(--coral); }
+  .ws-nav .flag { width: 6px; height: 6px; border-radius: 999px; background: var(--coral);
+    margin-left: auto; flex-shrink: 0; }
+  .ws-body { flex: 1; min-width: 0; overflow-y: auto; padding: 22px 24px 26px; }
+  .ws-foot { flex-shrink: 0; border-top: 1px solid var(--line); background: #fff; padding: 13px 22px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .ws-foot .state { font-size: 12.5px; color: var(--muted); }
+  .ws-foot .state.on { color: var(--coral); font-weight: 700; }
+  .pane { display: none; }
+  .pane.on { display: block; }
+  .pane > .sect:first-child { margin-top: 0; }
+  .paneintro { font-size: 12.5px; color: var(--muted); line-height: 1.55; margin: -4px 0 16px; }
+
+  /* readiness checklist - the panel's headline answer to "can this client mail yet?" */
+  .ready { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 20px; }
+  .ready .r { display: flex; align-items: center; gap: 10px; padding: 10px 14px; width: 100%;
+    background: #fff; border: none; border-bottom: 1px solid var(--line); text-align: left;
+    font-size: 13px; font-family: inherit; color: var(--ink); }
+  .ready .r:last-child { border-bottom: none; }
+  .ready .r:hover { background: var(--bg); }
+  .ready .r svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .ready .r .why { margin-left: auto; font-size: 12px; color: var(--muted); }
+  .ready .r.no { color: var(--warn); }
+  .ready .r.no .why { color: var(--warn); }
+
+  .prizehead { font-size: 10.5px; color: var(--muted); font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; }
+  .prizerow input { padding: 8px 9px; font-size: 13px; font-family: inherit; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; outline: none; width: 100%; }
+  .prizerow input:focus { border-color: var(--blue); }
+  .iconbtn { background: none; border: none; padding: 4px; display: grid; place-items: center; }
+  .iconbtn svg { width: 15px; height: 15px; color: var(--muted); }
+  .iconbtn:hover svg { color: var(--coral); }
+
+  .hidden { display: none !important; }
+  #boot { min-height: 100vh; display: grid; place-items: center; color: var(--muted); font-size: 14px; }
+
+  @media (max-width: 720px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .thead { display: none; }
+    .trow { grid-template-columns: 1fr; row-gap: 10px; }
+    .rowacts { justify-content: flex-start; }
+    .ws { flex-direction: column; }
+    .ws-nav { width: auto; border-right: none; border-bottom: 1px solid var(--line);
+      display: flex; gap: 6px; overflow-x: auto; padding: 10px; }
+    .ws-nav .grp { display: none; }
+    .ws-nav button { width: auto; white-space: nowrap; }
+    .product-nav { overflow-x: auto; }
+    .ember-table .trow { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- boot / guard screen -->
+<div id="boot">Checking access...</div>
+
+<!-- app (revealed after super-admin guard passes) -->
+<div id="app" class="hidden">
+  <header class="bar">
+    <div class="bar-in">
+      <div class="brand-row">
+        <span class="brand-mark" aria-hidden="true"><img src="https://assets.cdn.filesafe.space/mgtPoR3m74nz3aBLG05X/media/69820fab2dd9850430b60fb4.png" alt="BizLab" style="width:100%;height:100%;object-fit:contain;border-radius:inherit"/></span>
+        <div>
+          <div class="brand-name">BizLab</div>
+          <div class="brand-sub">SUPER ADMIN</div>
+        </div>
+      </div>
+      <div class="bar-right">
+        <span class="owner-chip">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" stroke="currentColor" stroke-width="1.8"/></svg>
+          Platform owner
+        </span>
+        <span class="avatar" id="admin-avatar" title="">-</span>
+      </div>
+    </div>
+  </header>
+
+  <nav class="product-nav" aria-label="BizLab products">
+    <button class="product-tab on" data-product="ripple">
+      <svg viewBox="0 0 24 24" fill="none" style="width:17px;height:17px"><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.4" opacity=".65"/><circle cx="12" cy="12" r="10.5" stroke="currentColor" stroke-width="1.2" opacity=".35"/></svg>
+      Ripple
+    </button>
+    <button class="product-tab" data-product="ember">
+      <span class="mini-flame">🔥</span>
+      Ember
+    </button>
+    <div class="product-nav-actions">
+      <button class="btn" id="platform-add-location">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        Add Location
+      </button>
+    </div>
+  </nav>
+
+  <main class="page" id="ripple-admin-view">
+    <div class="page-head">
+      <div>
+        <h1>Locations</h1>
+        <p>Every franchise tenant on the platform. You see across all of them by policy.</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn ghost" id="platform-btn">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" stroke="currentColor" stroke-width="1.5"/></svg>
+          Platform settings
+        </button>
+        <button class="btn" id="add-btn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Connect Ripple Location
+        </button>
+      </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="controls">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="search" placeholder="Search by name or slug...">
+      </div>
+      <div class="segbar" id="segbar">
+        <button class="seg on" data-s="all">all</button>
+        <button class="seg" data-s="active">active</button>
+        <button class="seg" data-s="suspended">suspended</button>
+      </div>
+    </div>
+
+    <div class="table">
+      <div class="thead">
+        <div>Location</div><div>Plan</div><div>HighLevel link</div><div>Ripple value</div><div></div>
+      </div>
+      <div id="rows"></div>
+    </div>
+
+    <p class="note">
+      Cross-tenant visibility is granted by the <code>is_super_admin</code> flag, read server-side inside
+      RLS via a security-definer function - never from the browser. Tenant admins cannot elevate themselves.
+    </p>
+  </main>
+
+  <main class="page hidden" id="ember-admin-view">
+    <div class="page-head ember-head">
+      <div>
+        <h1>Ember locations</h1>
+        <p>Enroll and monitor locations that opt in to customer reactivation. Ember configuration remains separate from Ripple.</p>
+      </div>
+      <div class="head-actions">
+        <button class="btn ghost" id="ember-refresh-btn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 0 1 14-5M20 12a8 8 0 0 1-14 5M18 3v4h-4M6 21v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Refresh
+        </button>
+        <button class="btn ember-primary" id="ember-enroll-btn">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Enroll Ember Location
+        </button>
+      </div>
+    </div>
+
+    <div class="ember-setup-note">
+      <strong>Separate product, shared oversight.</strong> A location can use Ripple, Ember, both, or neither.
+      This view reads only the <code>ember</code> schema and does not change Ripple configuration.
+    </div>
+
+    <div class="stats ember-stats" id="ember-stats"></div>
+
+    <div class="controls">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="ember-search" placeholder="Search Ember locations...">
+      </div>
+      <div class="segbar" id="ember-segbar">
+        <button class="seg on" data-es="all">all</button>
+        <button class="seg" data-es="active">active</button>
+        <button class="seg" data-es="testing">testing</button>
+        <button class="seg" data-es="draft">draft</button>
+        <button class="seg" data-es="paused">paused</button>
+      </div>
+    </div>
+
+    <div class="table ember-table">
+      <div class="thead">
+        <div>Location</div><div>FieldRoutes</div><div>Ember state</div><div>Integration</div><div></div>
+      </div>
+      <div id="ember-rows">
+        <div class="ember-empty"><span class="flame">🔥</span><h3>Loading Ember locations…</h3></div>
+      </div>
+    </div>
+
+    <p class="note">
+      Ember access is controlled by <code>ember.location_user</code> and <code>ember.platform_user</code>.
+      Ripple tenant membership is not reused for Ember authorization.
+    </p>
+  </main>
+</div>
+
+<div id="modal-mount"></div>
+<div id="toast-mount"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// -- Config: same two values as the other Ripple pages --
+const SUPABASE_URL = "https://dhizayohljxioxxzkhty.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoaXpheW9obGp4aW94eHpraHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODMyODEsImV4cCI6MjEwMDQ1OTI4MX0.MmcWiXK7hxPaMuWGPZLiA-vowFs3dJi6OqkOHKDCnUY";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey: 'ripple-auth',
+      storage: window.localStorage,
+      detectSessionInUrl: true
+    }
+  });
+
+// -- Call the admin-operations Edge Function --
+async function adminOp(action, payload) {
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch(SUPABASE_URL + "/functions/v1/admin-operations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + (session ? session.access_token : ""),
+    },
+    body: JSON.stringify({ action, payload: payload || {} }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(body.error || ("HTTP " + res.status));
+    // Optional: the function may return { error, field } so the UI can point at the input.
+    if (body.field) err.field = body.field;
+    throw err;
+  }
+  return body;
+}
+
+// HighLevel's public booking widget link, derived from the calendar id.
+const BOOKING_BASE = "https://api.leadconnectorhq.com/widget/booking/";
+
+const PLANS = ["starter", "growth", "enterprise"];
+const money = (n) => "$" + (n || 0).toLocaleString();
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const initials = (name) => (String(name).match(/\b\w/g) || []).slice(0, 2).join("").toUpperCase();
+const isUrl = (v) => /^https:\/\/\S+$/i.test(String(v || "").trim());
+
+let TENANTS = []; // populated from admin-operations listLocations
+let EMBER_LOCATIONS = [];
+let EMBER_ACCESS = false;
+let PLATFORM = { landing_base_url: "", booking_base_url: "",
+                 price_per_card_cents: "", price_per_lookup_cents: "" };
+
+let query = "";
+let statusFilter = "all";
+let emberQuery = "";
+let emberStatusFilter = "all";
+
+// -- Guard: only a signed-in super admin may see this page --
+(async () => {
+  async function waitForSession(tries = 5) {
+    for (let i = 0; i < tries; i++) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) return session;
+      await new Promise(r => setTimeout(r, 250));
+    }
+    return null;
+  }
+
+  const session2 = await waitForSession();
+  if (!session2) { window.location.replace("/login"); return; }
+
+  let isSuperAdmin = false;
+  try {
+    const { data: sa } = await sb.rpc("is_super_admin");
+    isSuperAdmin = sa === true;
+  } catch (_) { isSuperAdmin = false; }
+
+  if (!isSuperAdmin) {
+    // Not a platform owner - send them to their own locations instead.
+    window.location.replace("/locations");
+    return;
+  }
+
+  // Passed. Reveal the app.
+  const av = document.getElementById("admin-avatar");
+  const email = session2.user.email || "";
+  av.textContent = (email[0] || "?").toUpperCase();
+  av.title = email;
+
+  document.getElementById("boot").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+
+  await loadTenants();
+  await Promise.all([loadPlatform(), loadEmber()]);
+  render();
+})();
+
+// Because the caller is a super admin, RLS returns every tenant row.
+async function loadTenants() {
+  const FN = SUPABASE_URL + "/functions/v1/admin-operations";
+  const { data: { session } } = await sb.auth.getSession();
+  const res = await fetch(FN, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + (session ? session.access_token : ""),
+    },
+    body: JSON.stringify({ action: "listLocations" }),
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    toast("Couldn't load locations: " + (e.error || res.status));
+    TENANTS = [];
+    return;
+  }
+  const { locations } = await res.json();
+  // Map the real config rows into the shape the UI expects.
+  TENANTS = (locations || []).map((l) => ({
+    id: l.location_id,
+    name: l.client_name || l.location_id,
+    slug: l.location_id,
+    status: l.paused ? "suspended" : "active",
+    plan: "growth",
+    ghlLocationId: l.location_id,
+    tokenStatus: l.connected ? "healthy" : "unlinked",
+    tokenExpires: null,
+    prizeWeights: Array.isArray(l.prize_weights) ? l.prize_weights : [],
+    backfilled: !!l.backfilled,
+    connected: !!l.connected,
+    // -- delivery setup (listLocations must return these four columns) --
+    landingUrl: l.landing_url || "",
+    priceCard: l.price_per_card_cents,
+    priceLookup: l.price_per_lookup_cents,
+    bookingPageUrl: l.booking_page_url || "",
+    theme: (l.theme && typeof l.theme === "object") ? l.theme : {},
+    ghlFields: (l.ghl_fields && typeof l.ghl_fields === "object") ? l.ghl_fields : {},
+    calendarId: l.ghl_calendar_id || "",
+    bookingUrl: l.booking_url || "",
+    subaccountId: l.thanksio_subaccount_id || "",
+    stats: { sent: 0, scanned: 0, claimed: 0, redeemed: 0, value: 0 },
+    teamCounts: l.teamCounts || { admin: 0, viewer: 0 },
+    users: [],
+  }));
+}
+
+async function loadPlatform() {
+  try {
+    const r = await adminOp("getPlatformSettings", {});
+    PLATFORM = (r && r.settings) || PLATFORM;
+  } catch (_) { /* falls back to the env secret server-side */ }
+}
+
+// Ember has its own tenant and membership model. These reads never touch
+// public.config and therefore cannot alter or depend on Ripple enrollment.
+async function loadEmber() {
+  EMBER_LOCATIONS = [];
+  EMBER_ACCESS = false;
+  try {
+    const result = await adminOp("listEmberLocations", {});
+    const locations = result.locations || [];
+    EMBER_ACCESS = true;
+    EMBER_LOCATIONS = locations.map((l) => {
+      const state = l.onboarding_status || (l.enabled ? "active" : "draft");
+      return {
+        id: l.location_id,
+        name: l.display_name || l.location_id,
+        ghlLocationId: l.ghl_location_id || "",
+        timezone: l.timezone || "UTC",
+        status: state,
+        enabled: !!l.enabled,
+        backfilled: !!l.backfill_completed_at,
+        offices: Array.isArray(l.offices) ? l.offices : [],
+        optedInAt: l.opted_in_at || null,
+      };
+    });
+
+    // Product chips in the Ripple view are informational only. A matching ID
+    // means the location has separately opted in to Ember.
+    const emberById = new Map(EMBER_LOCATIONS.map((l) => [l.id, l]));
+    TENANTS.forEach((t) => { t.ember = emberById.get(t.id) || null; });
+  } catch (e) {
+    console.warn("Ember location read failed", e);
+    EMBER_LOCATIONS = [];
+  }
+  renderEmber();
+}
+
+// -- Rendering --
+function filtered() {
+  const q = query.trim().toLowerCase();
+  return TENANTS.filter((t) => {
+    const mq = !q || t.name.toLowerCase().includes(q) || t.slug.includes(q);
+    const ms = statusFilter === "all" || t.status === statusFilter;
+    return mq && ms;
+  });
+}
+
+function render() {
+  renderStats();
+  renderRows();
+  renderEmber();
+}
+
+function renderStats() {
+  const tot = TENANTS.reduce((a, t) => ({
+    tenants: a.tenants + 1,
+    active: a.active + (t.status === "active" ? 1 : 0),
+    ready: a.ready + (isReady(t) ? 1 : 0),
+    value: a.value + t.stats.value,
+  }), { tenants: 0, active: 0, ready: 0, value: 0 });
+
+  const rippleMark = '<svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px"><circle cx="12" cy="12" r="3" fill="#B01657"/><circle cx="12" cy="12" r="7" stroke="#007DC9" stroke-width="1.4" opacity="0.7"/><circle cx="12" cy="12" r="10.5" stroke="#007DC9" stroke-width="1.2" opacity="0.4"/></svg>';
+  const b = (p) => `<svg viewBox="0 0 24 24" fill="none">${p}</svg>`;
+  const cards = [
+    { icon: b('<path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4" stroke="currentColor" stroke-width="1.8"/>'), label: "Total locations", val: tot.tenants },
+    { icon: b('<path d="M12 2v10M6 6a8 8 0 1 0 12 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'), label: "Active", val: tot.active },
+    { icon: b('<path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>'), label: "Ready to mail", val: tot.ready + "/" + tot.tenants },
+    { icon: rippleMark, label: "Ripple value", val: money(tot.value) },
+  ];
+  document.getElementById("stats").innerHTML = cards.map((c) =>
+    `<div class="stat"><div class="stat-l">${c.icon} ${c.label}</div><div class="stat-v">${c.val}</div></div>`
+  ).join("");
+}
+
+// A location can actually mail only when it has a calendar to book into and a
+// thanks.io sub-account to bill. Landing falls back to the platform default.
+function isReady(t) { return !!(t.calendarId && t.subaccountId); }
+
+function readinessChips(t) {
+  const chips = [];
+  chips.push(t.calendarId
+    ? '<span class="pill good">Calendar set</span>'
+    : '<span class="pill warn">No calendar</span>');
+  chips.push(t.subaccountId
+    ? '<span class="pill good">Mail account set</span>'
+    : '<span class="pill warn">No mail account</span>');
+  chips.push(t.landingUrl
+    ? '<span class="pill blue">Own landing page</span>'
+    : '<span class="pill neutral">Default landing</span>');
+  chips.push(t.ember
+    ? '<span class="pill ember">🔥 Ember ' + esc(t.ember.status) + '</span>'
+    : '<span class="pill neutral">Ember not enrolled</span>');
+  return `<div class="chips">${chips.join("")}</div>`;
+}
+
+function filteredEmber() {
+  const q = emberQuery.trim().toLowerCase();
+  return EMBER_LOCATIONS.filter((l) => {
+    const matchesQuery = !q || l.name.toLowerCase().includes(q) || l.id.toLowerCase().includes(q) ||
+      l.offices.some((o) => String(o.fieldroutes_office_id).toLowerCase().includes(q));
+    const matchesStatus = emberStatusFilter === "all" || l.status === emberStatusFilter;
+    return matchesQuery && matchesStatus;
+  });
+}
+
+function renderEmber() {
+  const stats = document.getElementById("ember-stats");
+  const rowsEl = document.getElementById("ember-rows");
+  if (!stats || !rowsEl) return;
+
+  const total = EMBER_LOCATIONS.length;
+  const active = EMBER_LOCATIONS.filter((l) => l.status === "active" && l.enabled).length;
+  const mapped = EMBER_LOCATIONS.filter((l) => l.offices.some((o) => o.enabled)).length;
+  const testing = EMBER_LOCATIONS.filter((l) => l.status === "testing").length;
+  stats.innerHTML = [
+    ["🔥", "Ember enrolled", total],
+    ["✓", "Active", active],
+    ["↯", "FieldRoutes mapped", mapped + "/" + total],
+    ["◷", "In testing", testing],
+  ].map((c) => `<div class="stat"><div class="stat-l"><span>${c[0]}</span> ${c[1]}</div><div class="stat-v">${c[2]}</div></div>`).join("");
+
+  if (!EMBER_ACCESS && !EMBER_LOCATIONS.length) {
+    rowsEl.innerHTML = `<div class="ember-empty">
+      <span class="flame">🔥</span>
+      <h3>Ember administrator access is not enabled yet</h3>
+      <p>Add this signed-in user to <code>ember.platform_user</code>. Once enabled, this view will show every Ember location without granting access to Ripple configuration.</p>
+    </div>`;
+    return;
+  }
+
+  const rows = filteredEmber();
+  if (!rows.length) {
+    rowsEl.innerHTML = `<div class="ember-empty">
+      <span class="flame">🔥</span>
+      <h3>No Ember locations match</h3>
+      <p>Enroll an opted-in location, map its FieldRoutes office ID, and keep it in Draft or Testing until webhook verification is complete.</p>
+    </div>`;
+    return;
+  }
+
+  const statusTone = { active: "good", testing: "ember", draft: "neutral", paused: "warn", archived: "neutral" };
+  rowsEl.innerHTML = rows.map((l) => {
+    const office = l.offices.length
+      ? l.offices.map((o) => `<span class="pill ${o.enabled ? "good" : "neutral"}">Office ${esc(o.fieldroutes_office_id)}</span>`).join(" ")
+      : '<span class="pill warn">Not mapped</span>';
+    const setup = !l.offices.length ? "Office mapping required"
+      : !l.backfilled ? "Backfill incomplete"
+      : l.enabled ? "Receiver ready" : "Master switch off";
+    return `<div class="trow" data-ember-id="${esc(l.id)}">
+      <div class="tname"><span class="dot" style="background:${l.enabled ? "var(--ember)" : "var(--warn)"}"></span>
+        <div><div class="n">${esc(l.name)}</div><div class="m">${esc(l.id)} · ${esc(l.timezone)}</div>
+          <div class="product-pills"><span class="pill ember">🔥 Ember</span>${TENANTS.some((t) => t.id === l.id) ? '<span class="pill blue">Ripple</span>' : ""}</div>
+        </div>
+      </div>
+      <div>${office}</div>
+      <div><span class="pill ${statusTone[l.status] || "neutral"}">${esc(l.status)}</span></div>
+      <div class="tval"><div class="v" style="font-size:13px">${esc(setup)}</div><div class="s">${l.ghlLocationId ? "HighLevel linked" : "HighLevel ID not set"}</div></div>
+      <div class="rowacts">
+        <button class="btn ghost sm" data-ember-open="${esc(l.id)}">Control center</button>
+        <button class="btn ember-primary sm" data-ember-manage="${esc(l.id)}">Manage Ember</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderRows() {
+  const rows = filtered();
+  const el = document.getElementById("rows");
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.686 7-11a7 7 0 1 0-14 0c0 5.314 7 11 7 11z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="10" r="2.4" fill="currentColor"/></svg>
+      <div style="margin-top:8px;font-size:14px">No locations match. Add one to get started.</div></div>`;
+    return;
+  }
+  const dotColor = { active: "var(--good)", suspended: "var(--coral)" };
+  el.innerHTML = rows.map((t) => {
+    let ghl;
+    if (t.ghlLocationId) {
+      const tone = t.tokenStatus === "healthy" ? "good" : "warn";
+      const label = t.tokenStatus === "healthy" ? "Linked" : "Token expiring";
+      ghl = `<span class="pill ${tone}">${label}</span> <code style="font-size:11px;color:var(--muted)">${esc(t.ghlLocationId.slice(0,8))}...</code>`;
+    } else {
+      ghl = `<span class="pill neutral">Not linked</span>`;
+    }
+    return `<div class="trow" data-id="${t.id}">
+      <div class="tname">
+        <span class="dot" style="background:${dotColor[t.status]}"></span>
+        <div>
+          <div class="n">${esc(t.name)}</div>
+          <div class="m">${esc(t.slug)} - ${t.users.length} user${t.users.length !== 1 ? "s" : ""}${t.status === "suspended" ? " - suspended" : ""}</div>
+          ${readinessChips(t)}
+        </div>
+      </div>
+      <div><span class="pill blue">${esc(t.plan)}</span></div>
+      <div style="display:flex;align-items:center;gap:7px">${ghl}</div>
+      <div class="tval"><div class="v">${money(t.stats.value)}</div><div class="s">${t.stats.redeemed} redeemed</div></div>
+      <div class="rowacts">
+        <button class="btn ghost sm" data-open="${t.id}">Open</button>
+        <button class="btn sm" data-manage="${t.id}"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Manage</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// -- Toast --
+function toast(msg) {
+  const m = document.getElementById("toast-mount");
+  m.innerHTML = `<div class="toast"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> ${esc(msg)}</div>`;
+  setTimeout(() => { m.innerHTML = ""; }, 2600);
+}
+
+// -- Modal plumbing --
+// A modal may register a guard (the manage panel does) so an accidental click
+// on the scrim cannot throw away unsaved edits.
+let closeGuard = null;
+function closeModal() {
+  if (closeGuard && closeGuard() === false) return;
+  closeGuard = null;
+  document.getElementById("modal-mount").innerHTML = "";
+}
+function openModal(html, width = 480, cls = "") {
+  closeGuard = null;
+  document.getElementById("modal-mount").innerHTML =
+    `<div class="scrim" data-scrim><div class="modal ${cls}" style="max-width:${width}px">${html}</div></div>`;
+}
+const tenantById = (id) => TENANTS.find((t) => t.id === id);
+
+const closeX = `<button class="x" data-close><svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>`;
+
+function fieldPlan(current) {
+  return `<div class="planpick">${PLANS.map((p) =>
+    `<button type="button" data-plan="${p}" class="${p === current ? "on" : ""}">${p}</button>`).join("")}</div>`;
+}
+
+// Create
+function modalCreate() {
+  openModal(`
+    <div class="modal-head"><div><div class="t">Connect Ripple Location</div><div class="s">Connect a HighLevel sub-account to Ripple via OAuth.</div></div>
+      ${closeX}</div>
+    <div class="modal-body">
+      <div class="info-box">A Ripple location <strong>is</strong> a HighLevel sub-account. To add one, install the Ripple app on that sub-account - HighLevel walks you through choosing the location and authorizing. When you approve, the location, its tokens, and its config row are created automatically and it appears in this list.</div>
+      <ol style="font-size:13.5px;color:var(--muted);line-height:1.7;margin:14px 0 18px;padding-left:20px">
+        <li>Click <strong>Open HighLevel install</strong> below.</li>
+        <li>Choose the sub-account to connect and approve the permissions.</li>
+        <li>You'll return to Ripple; the new location shows here within a few seconds.</li>
+      </ol>
+      <div class="actions">
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn primary" id="c-install"><svg viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Open HighLevel install</button>
+      </div>
+      <div id="c-install-status"></div>
+    </div>`);
+
+  document.getElementById("c-install").onclick = async () => {
+    const btn = document.getElementById("c-install");
+    btn.disabled = true; btn.textContent = "Preparing install link...";
+    try {
+      const r = await adminOp("startInstall", {});
+      if (!r.url) throw new Error("No install URL returned");
+      window.open(r.url, "_blank", "noopener");
+      document.getElementById("c-install-status").innerHTML =
+        `<div class="info-box" style="margin-top:12px;background:var(--good-wash);border-color:var(--good)">
+           Install opened in a new tab. Finish authorizing there, then close this and
+           refresh - the new location will appear.
+         </div>`;
+    } catch (e) {
+      document.getElementById("c-install-status").innerHTML =
+        `<div class="info-box" style="margin-top:12px;background:var(--coral-wash);border-color:var(--coral)">Couldn't start install: ${esc(e.message)}</div>`;
+      btn.disabled = false;
+      btn.innerHTML = 'Open HighLevel install';
+    }
+  };
+}
+
+// -- Platform settings (v11) - the default landing page for every client -----
+function modalPlatform() {
+  openModal(`
+    <div class="modal-head"><div><div class="t">Platform settings</div><div class="s">Defaults that apply to every location</div></div>
+      ${closeX}</div>
+    <div class="modal-body">
+      <div class="info-box">Ripple mails one central landing page for all clients, themed per location from the QR code. A client only needs their own address here if they've asked for their own domain.</div>
+      <label class="field">
+        <span class="lbl">Default landing page</span>
+        <div class="inline">
+          <input id="p-url" type="url" value="${esc(PLATFORM.landing_base_url || "")}" placeholder="https://offer.bizlabsolutions.ai">
+          <a class="linkout" id="p-open" target="_blank" rel="noopener" aria-disabled="true">Open</a>
+        </div>
+        <div class="hint">Used wherever a location has no address of its own. Applies to cards mailed from here on.</div>
+        <div class="err hidden" id="p-err"></div>
+      </label>
+      <label class="field">
+        <span class="lbl">Default booking page</span>
+        <div class="inline">
+          <input id="p-book" type="url" value="${esc(PLATFORM.booking_base_url || "")}" placeholder="https://ripple.bizlabsolutions.ai/booking-now">
+          <a class="linkout" id="p-book-open" target="_blank" rel="noopener" aria-disabled="true">Open</a>
+        </div>
+        <div class="hint">Where the claim button sends people. Unlike the landing page this is not printed on the card, so changes take effect immediately.</div>
+        <div class="err hidden" id="p-book-err"></div>
+      </label>
+      <div class="sect spaced">Base pricing</div>
+      <p class="hint" style="margin:-6px 0 12px">What every client pays unless they have their own rate. Changing this does not re-price cards already mailed - the rate is stamped on each card when it sends.</p>
+      <div class="row2">
+        <label class="field">
+          <span class="lbl">Per postcard</span>
+          <div class="inline">
+            <span style="font-size:15px;color:var(--muted)">$</span>
+            <input id="p-card" type="text" inputmode="decimal" placeholder="1.50">
+          </div>
+          <div class="hint">Printing, postage and handling.</div>
+        </label>
+        <label class="field">
+          <span class="lbl">Per neighbour lookup</span>
+          <div class="inline">
+            <span style="font-size:15px;color:var(--muted)">$</span>
+            <input id="p-lookup" type="text" inputmode="decimal" placeholder="0.05">
+          </div>
+          <div class="hint">Charged per address the radius search returns.</div>
+        </label>
+      </div>
+      <div class="err hidden" id="p-price-err"></div>
+
+      <div class="actions">
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn primary" id="p-save"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Save defaults</button>
+      </div>
+    </div>`, 520);
+
+  const url = document.getElementById("p-url");
+  const open = document.getElementById("p-open");
+  const err = document.getElementById("p-err");
+  const cardEl = document.getElementById("p-card");
+  const lookupEl = document.getElementById("p-lookup");
+  const priceErr = document.getElementById("p-price-err");
+  const centsToStr = (c) => (c === "" || c === null || c === undefined) ? "" : (Number(c) / 100).toFixed(2);
+  const strToCents = (v) => Math.round(parseFloat(String(v).replace(/[^0-9.]/g, "")) * 100);
+  cardEl.value = centsToStr(PLATFORM.price_per_card_cents);
+  lookupEl.value = centsToStr(PLATFORM.price_per_lookup_cents);
+  [cardEl, lookupEl].forEach((el) => { el.oninput = () => priceErr.classList.add("hidden"); });
+
+  const bookUrl = document.getElementById("p-book");
+  const bookOpen = document.getElementById("p-book-open");
+  const bookErr = document.getElementById("p-book-err");
+  const link = (a, v) => { const ok = isUrl(v); a.href = ok ? v : "#"; a.setAttribute("aria-disabled", ok ? "false" : "true"); };
+  const sync = () => { link(open, url.value.trim()); link(bookOpen, bookUrl.value.trim()); };
+  url.oninput = () => { err.classList.add("hidden"); url.classList.remove("bad"); sync(); };
+  bookUrl.oninput = () => { bookErr.classList.add("hidden"); bookUrl.classList.remove("bad"); sync(); };
+  sync();
+
+  document.getElementById("p-save").onclick = async () => {
+    const v = url.value.trim();
+    const bv = bookUrl.value.trim();
+    if (!isUrl(v)) {
+      url.classList.add("bad");
+      err.textContent = "Enter a full address starting with https://";
+      err.classList.remove("hidden");
+      return;
+    }
+    if (bv && !isUrl(bv)) {
+      bookUrl.classList.add("bad");
+      bookErr.textContent = "Enter a full address starting with https://";
+      bookErr.classList.remove("hidden");
+      return;
+    }
+    const btn = document.getElementById("p-save");
+    btn.disabled = true; btn.textContent = "Saving...";
+    try {
+      const cardCents = cardEl.value.trim() ? strToCents(cardEl.value) : null;
+      const lookupCents = lookupEl.value.trim() ? strToCents(lookupEl.value) : null;
+      // A zero or negative price is almost certainly a typo, and it would mail
+      // for free until someone noticed on an invoice.
+      if ((cardCents !== null && (!Number.isFinite(cardCents) || cardCents <= 0)) ||
+          (lookupCents !== null && (!Number.isFinite(lookupCents) || lookupCents <= 0))) {
+        priceErr.textContent = "Prices must be a positive amount, like 1.50.";
+        priceErr.classList.remove("hidden");
+        btn.disabled = false;
+        btn.innerHTML = 'Save defaults';
+        return;
+      }
+
+      await adminOp("setPlatformSettings", {
+        landing_base_url: v, booking_base_url: bv,
+        price_per_card_cents: cardCents, price_per_lookup_cents: lookupCents
+      });
+      PLATFORM.landing_base_url = v;
+      PLATFORM.booking_base_url = bv;
+      PLATFORM.price_per_card_cents = cardCents;
+      PLATFORM.price_per_lookup_cents = lookupCents;
+      closeModal(); render(); toast("Default landing page saved.");
+    } catch (e) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Save default';
+      toast("Save failed: " + e.message);
+    }
+  };
+}
+
+// -- Manage: one panel, every setting ----------------------------------------
+// A single Manage button opens everything a platform owner sets for a client.
+// Sections are drafted together and written by one Save; anything that cannot
+// be drafted (creating a user, suspending a location) says so and acts at once.
+function modalWorkspace(id, startSect) {
+  const t = tenantById(id); if (!t) return;
+  const $ = (i) => document.getElementById(i);
+  const ico = (p) => `<svg viewBox="0 0 24 24" fill="none">${p}</svg>`;
+  const centsToStr = (c) => (c === null || c === undefined || c === "") ? "" : (Number(c) / 100).toFixed(2);
+  const strToCents = (v) => Math.round(parseFloat(String(v).replace(/[^0-9.]/g, "")) * 100);
+
+  let sect = startSect || "general";
+  const dirty = new Set();
+
+  const gf = t.ghlFields || {};
+  const theme = t.theme || {};
+  let calendars = null;                        // null = not fetched yet
+  let customBooking = !!(t.bookingUrl && t.calendarId && t.bookingUrl !== BOOKING_BASE + t.calendarId)
+                      || !!(t.bookingUrl && !t.calendarId);
+
+  // Prizes are edited in memory and written by the same Save as everything else.
+  let weights = (t.prizeWeights || []).map((w, i) => ({
+    idx: typeof w.idx === "number" ? w.idx : i,
+    label: w.label || ("Prize " + ((typeof w.idx === "number" ? w.idx : i) + 1)),
+    sub: w.sub || "",
+    code_prefix: w.code_prefix || "",
+    w: typeof w.w === "number" ? w.w : 1,
+    cap: (w.cap === null || w.cap === undefined || w.cap === "") ? "" : Number(w.cap),
+  }));
+  let claimed = {}, statsLoaded = false;
+  let team = [], teamLoaded = false;
+
+  const SECTIONS = [
+    { k: "general",   label: "General",     grp: "Account",
+      icon: ico('<path d="M3 21h18M5 21V7l7-4 7 4v14" stroke="currentColor" stroke-width="1.8"/>') },
+    { k: "highlevel", label: "HighLevel",   grp: "",
+      icon: ico('<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>') },
+    { k: "landing",   label: "Landing page", grp: "The card",
+      icon: ico('<path d="M3 7l9 6 9-6M3 7v10h18V7M3 7l9-4 9 4" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>') },
+    { k: "prizes",    label: "Prizes", grp: "",
+      icon: ico('<path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 16.5 7.6 18.2l.9-5.5-4-3.9L10 8z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>') },
+    { k: "look",      label: "Look and feel", grp: "",
+      icon: ico('<path d="M12 3a9 9 0 1 0 0 18h2a3 3 0 0 0 0-6 3 3 0 0 1 0-6h3a4 4 0 0 0-5-6z" stroke="currentColor" stroke-width="1.7"/>') },
+    { k: "mail",      label: "Mail and billing", grp: "Money",
+      icon: ico('<path d="M3 6h18v12H3zM3 6l9 7 9-7" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>') },
+    { k: "users",     label: "Users and roles", grp: "Access",
+      icon: ico('<circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M3 20a6 6 0 0 1 12 0M16 6a3 3 0 0 1 0 6M21 20a6 6 0 0 0-4-5.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>') },
+    { k: "danger",    label: "Danger zone", grp: "", danger: true,
+      icon: ico('<path d="M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>') },
+  ];
+
+  const tick = '<svg viewBox="0 0 24 24" fill="none" style="color:var(--good)"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const bang = '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v6M12 16h.01" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+
+  // -- Panes ----------------------------------------------------------------
+  const paneGeneral = `
+    <div class="sect">Ready to mail</div>
+    <div class="ready" id="ws-ready"></div>
+    <label class="field">
+      <span class="lbl">Franchise name</span>
+      <input id="m-name" value="${esc(t.name)}" autocomplete="off">
+      <div class="hint">What the owner sees on their dashboard and in the Monday email.</div>
+    </label>
+    <div class="row2">
+      <label class="field">
+        <span class="lbl">HighLevel location ID</span>
+        <input value="${esc(t.id)}" readonly>
+        <div class="hint">A Ripple location is a HighLevel sub-account. This is set at install and never changes.</div>
+      </label>
+      <div class="field">
+        <span class="lbl">Plan</span>
+        <div style="padding-top:6px"><span class="pill blue">${esc(t.plan)}</span></div>
+        <div class="hint">Plans are not stored in config yet, so every location reads as growth.</div>
+      </div>
+    </div>`;
+
+  const calOpts = '<option value="">No calendar set</option>' +
+    (t.calendarId ? `<option value="${esc(t.calendarId)}" selected>Currently set - ${esc(t.calendarId)}</option>` : "");
+
+  const paneHighlevel = `
+    <div class="sect">Connection</div>
+    <div id="ws-ghl-status"></div>
+    <div class="sect spaced">Booking calendar</div>
+    <label class="field">
+      <span class="lbl">HighLevel calendar</span>
+      <div class="inline">
+        <select id="d-calendar">${calOpts}</select>
+        <button class="btn ghost sm" id="d-load" type="button">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 0 1 14-5M20 12a8 8 0 0 1-14 5M18 3v4h-4M6 21v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Load
+        </button>
+      </div>
+      <div class="hint">Without a calendar the landing page still reveals the prize, but the claim button is hidden.</div>
+      <div class="err hidden" id="d-cal-err"></div>
+    </label>
+    <label class="field">
+      <span class="lbl">Booking link</span>
+      <div class="inline">
+        <input id="d-booking" type="url" value="${esc(t.bookingUrl)}" readonly>
+        <a class="linkout" id="d-booking-open" target="_blank" rel="noopener" aria-disabled="true">Open</a>
+      </div>
+      <label class="toggle"><input type="checkbox" id="d-custom" ${customBooking ? "checked" : ""}> This client uses a custom booking link</label>
+    </label>
+
+    <div class="sect spaced">Custom fields</div>
+    <p class="paneintro">Paste the field IDs from HighLevel (Settings, then Custom Fields). Leave one blank and the value still goes out as a tag and in the contact note.</p>
+    <div class="row2">
+      <label class="field"><span class="lbl">ripple_source_job</span><input id="d-f-job" value="${esc(gf.source_job || "")}" placeholder="field id" autocomplete="off"></label>
+      <label class="field"><span class="lbl">ripple_prize_code</span><input id="d-f-code" value="${esc(gf.prize_code || "")}" placeholder="field id" autocomplete="off"></label>
+    </div>
+    <div class="row2">
+      <label class="field"><span class="lbl">ripple_card_id</span><input id="d-f-card" value="${esc(gf.card_id || "")}" placeholder="field id" autocomplete="off"></label>
+      <label class="field"><span class="lbl">ripple_first_touch</span><input id="d-f-touch" value="${esc(gf.first_touch || "")}" placeholder="field id" autocomplete="off"></label>
+    </div>
+    <div class="row2">
+      <label class="field"><span class="lbl">ripple_preferred_date</span><input id="d-f-date" value="${esc(gf.preferred_date || "")}" placeholder="field id" autocomplete="off"></label>
+      <label class="field"><span class="lbl">ripple_preferred_time</span><input id="d-f-time" value="${esc(gf.preferred_time || "")}" placeholder="field id" autocomplete="off"></label>
+    </div>
+    <div class="row2">
+      <label class="field"><span class="lbl">ripple_prize (optional)</span><input id="d-f-prize" value="${esc(gf.prize || "")}" placeholder="field id" autocomplete="off"></label>
+      <span></span>
+    </div>`;
+
+  const paneLanding = `
+    <div class="sect">Where the card sends people</div>
+    <label class="field">
+      <span class="lbl">This client's own address</span>
+      <div class="inline">
+        <input id="d-landing" type="url" value="${esc(t.landingUrl)}" placeholder="https://offer.clientdomain.com" autocomplete="off">
+        <a class="linkout" id="d-landing-open" target="_blank" rel="noopener" aria-disabled="true">Open</a>
+      </div>
+      <div class="hint" id="d-landing-hint"></div>
+      <div class="err hidden" id="d-landing-err"></div>
+    </label>
+    <div class="warn-box hidden" id="d-landing-warn">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div>The address is printed into the QR code. Changing it affects the next batch onward - cards already in the mail keep the old one.</div>
+    </div>
+
+    <div class="sect spaced">Booking page</div>
+    <label class="field">
+      <span class="lbl">This client's own booking page</span>
+      <div class="inline">
+        <input id="d-bookpage" type="url" value="${esc(t.bookingPageUrl)}" placeholder="https://ripple.bizlabsolutions.ai/booking-now" autocomplete="off">
+        <a class="linkout" id="d-bookpage-open" target="_blank" rel="noopener" aria-disabled="true">Open</a>
+      </div>
+      <div class="hint" id="d-bookpage-hint"></div>
+      <div class="err hidden" id="d-bookpage-err"></div>
+    </label>`;
+
+  const PGRID = "1.1fr 1.3fr 100px 64px 64px 84px 30px";
+  const panePrizes = `
+    <div class="info-box">A neighbour's prize is rolled when they scan, and only counts against its <strong>cap</strong> when they actually claim it - so someone who scans and wanders off does not use up your best offer. Odds are the weight divided by the total.</div>
+    <div class="prizehead" style="display:grid;grid-template-columns:${PGRID};gap:6px;margin-bottom:6px">
+      <span>Prize</span><span>Description</span><span>Code</span><span>Weight</span><span>Cap</span><span style="text-align:center">Odds / used</span><span></span>
+    </div>
+    <div id="prize-rows"></div>
+    <button class="btn ghost sm" id="prize-add" style="margin-top:6px"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg> Add prize</button>
+    <div class="err hidden" id="prize-err"></div>
+    <div style="margin-top:14px;font-size:12.5px;color:var(--muted)" id="prize-total"></div>`;
+
+  const paneLook = `
+    <p class="paneintro">One page serves every client, themed from here. The theme changes how the page looks; it never changes what it does - claim limits, caps and consent wording stay server side.</p>
+    <div class="row2">
+      <label class="field">
+        <span class="lbl">Scratch background</span>
+        <select id="d-scratch">
+          <option value="leaves">Leaves</option>
+          <option value="skin">Skin</option>
+          <option value="grass">Grass</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="lbl">Accent colour</span>
+        <input id="d-accent" value="${esc(((theme.colors || {}).accent) || "")}" placeholder="#3FA9F5" autocomplete="off">
+      </label>
+    </div>
+    <label class="field">
+      <span class="lbl">Headline</span>
+      <input id="d-headline" value="${esc(((theme.copy || {}).headline) || "")}" placeholder="We just protected a yard on {street}." autocomplete="off">
+      <div class="hint">Use <code>{street}</code> where the street name should appear.</div>
+    </label>
+    <label class="field">
+      <span class="lbl">Button text</span>
+      <input id="d-ctatext" value="${esc(((theme.copy || {}).cta) || "")}" placeholder="Protect my yard" autocomplete="off">
+      <div class="err hidden" id="d-theme-err"></div>
+    </label>`;
+
+  const paneMail = `
+    <div class="sect">thanks.io</div>
+    <label class="field">
+      <span class="lbl">Sub-account ID</span>
+      <input id="d-sub" value="${esc(t.subaccountId)}" placeholder="e.g. 48213" autocomplete="off">
+      <div class="hint">Billing and mail volume for this client. Checked against thanks.io when you save.</div>
+      <div class="err hidden" id="d-sub-err"></div>
+    </label>
+
+    <div class="sect spaced">This client's rates</div>
+    <p class="paneintro">Leave blank to use the platform base price. The rate is stamped on each card as it sends, so a change here never re-prices cards already in the ground.</p>
+    <div class="row2">
+      <label class="field">
+        <span class="lbl">Per postcard</span>
+        <input id="d-price-card" inputmode="decimal" value="${esc(centsToStr(t.priceCard))}" placeholder="platform default" autocomplete="off">
+      </label>
+      <label class="field">
+        <span class="lbl">Per neighbour lookup</span>
+        <input id="d-price-lookup" inputmode="decimal" value="${esc(centsToStr(t.priceLookup))}" placeholder="platform default" autocomplete="off">
+      </label>
+    </div>
+    <div class="err hidden" id="d-price-err"></div>`;
+
+  const paneUsers = `
+    <div class="info-box"><strong>Admin</strong> edits promos and creates batches. <strong>Viewer</strong> sees the dashboard read-only. Both are locked to this location by RLS. Passwords are set here directly - no email needed.</div>
+    <div class="table" style="margin-bottom:18px" id="team-list"></div>
+    <div style="border-top:1px solid var(--line);padding-top:14px">
+      <div style="font-size:12.5px;font-weight:700;margin-bottom:8px">Create a user</div>
+      <div class="row2" style="margin-bottom:8px">
+        <input id="u-name" placeholder="Full name" style="padding:10px 12px;font-size:14px;border:1px solid var(--line);border-radius:9px;font-family:inherit">
+        <input id="u-email" placeholder="user@franchise.com" style="padding:10px 12px;font-size:14px;border:1px solid var(--line);border-radius:9px;font-family:inherit">
+      </div>
+      <div style="display:flex;gap:8px">
+        <input id="u-pass" placeholder="Password (blank = auto-generate)" style="flex:1;padding:10px 12px;font-size:14px;border:1px solid var(--line);border-radius:9px;font-family:inherit">
+        <select id="u-role" style="width:110px;padding:10px;border:1px solid var(--line);border-radius:9px;font-family:inherit"><option value="viewer">Viewer</option><option value="admin">Admin</option></select>
+        <button class="btn primary" id="u-add"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg> Create</button>
+      </div>
+      <div id="u-result"></div>
+    </div>
+    <p class="hint" style="margin-top:14px">Creating, removing and resetting take effect immediately - they are not held until Save.</p>`;
+
+  const paneDanger = `
+    <div class="warn-box">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div>Both actions here take effect immediately. They are not held until Save.</div>
+    </div>
+    <div class="sect">Pause mailing</div>
+    <p class="paneintro">Suspending sets <code>config.paused</code>. The intake keeps accepting completed jobs and answers them with a skip, so nothing queues and nothing mails until you reactivate.</p>
+    <button class="btn ${t.status === "active" ? "danger" : ""}" id="ws-toggle"></button>
+
+    <div class="sect spaced">Delete</div>
+    <p class="paneintro">A location cannot be deleted from here. It exists because the Ripple app is installed on that HighLevel sub-account - uninstall it there and the app-events workflow revokes the token and pauses the row. Suspending is the reversible option.</p>`;
+
+  const paneHtml = {
+    general: paneGeneral, highlevel: paneHighlevel, landing: paneLanding,
+    prizes: panePrizes, look: paneLook, mail: paneMail,
+    users: paneUsers, danger: paneDanger,
+  };
+
+  // -- Shell ----------------------------------------------------------------
+  let nav = "";
+  SECTIONS.forEach((sc) => {
+    if (sc.grp) nav += `<div class="grp">${esc(sc.grp)}</div>`;
+    nav += `<button data-sect="${sc.k}" class="${sc.danger ? "dangerish" : ""}">${sc.icon} ${sc.label}<span class="flag hidden" data-flag="${sc.k}"></span></button>`;
+  });
+
+  const panes = SECTIONS.map((sc) => `<div class="pane" data-pane="${sc.k}">${paneHtml[sc.k]}</div>`).join("");
+
+  openModal(`
+    <div class="modal-head">
+      <div>
+        <div class="t">${esc(t.name)}</div>
+        <div class="s"><code style="font-size:11.5px">${esc(t.id)}</code> - ${t.users.length} user${t.users.length !== 1 ? "s" : ""}${t.status === "suspended" ? " - suspended" : ""}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn ghost sm" data-open="${t.id}">Open dashboard</button>
+        ${closeX}
+      </div>
+    </div>
+    <div class="ws">
+      <div class="ws-nav" id="ws-nav">${nav}</div>
+      <div class="ws-body" id="ws-body">${panes}</div>
+    </div>
+    <div class="ws-foot">
+      <span class="state" id="ws-state">No unsaved changes</span>
+      <div style="display:flex;gap:10px">
+        <button class="btn ghost" data-close>Close</button>
+        <button class="btn primary" id="ws-save"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Save settings</button>
+      </div>
+    </div>`, 1000, "wide");
+
+  closeGuard = () => dirty.size === 0 ||
+    confirm("You have unsaved changes in this panel. Close anyway and lose them?");
+
+  // -- Section switching. Panes stay in the DOM so a draft in one section is
+  // still there when you come back to it.
+  function goto(k) {
+    sect = k;
+    document.querySelectorAll("#ws-nav [data-sect]").forEach((b) => b.classList.toggle("on", b.dataset.sect === k));
+    document.querySelectorAll("#ws-body [data-pane]").forEach((p) => p.classList.toggle("on", p.dataset.pane === k));
+    $("ws-body").scrollTop = 0;
+    if (k === "users" && !teamLoaded) { teamLoaded = true; refreshTeam(); }
+    if (k === "prizes" && !statsLoaded) loadPrizeStats();
+  }
+  $("ws-nav").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-sect]"); if (b) goto(b.dataset.sect);
+  });
+
+  // -- Dirty tracking, so the footer can say what is unsaved and the nav can
+  // flag which section it is in.
+  const DRAFTED = ["general", "highlevel", "landing", "prizes", "look", "mail"];
+  function markDirty(k) { if (DRAFTED.indexOf(k) >= 0) { dirty.add(k); paintDirty(); } }
+  function paintDirty() {
+    document.querySelectorAll("[data-flag]").forEach((f) =>
+      f.classList.toggle("hidden", !dirty.has(f.dataset.flag)));
+    const st = $("ws-state");
+    if (!dirty.size) { st.textContent = "No unsaved changes"; st.classList.remove("on"); return; }
+    const names = SECTIONS.filter((s) => dirty.has(s.k)).map((s) => s.label);
+    st.textContent = "Unsaved changes in " + names.join(", ");
+    st.classList.add("on");
+  }
+  ["input", "change"].forEach((ev) => $("ws-body").addEventListener(ev, (e) => {
+    const p = e.target.closest("[data-pane]"); if (p) markDirty(p.dataset.pane);
+  }));
+
+  // -- Readiness -----------------------------------------------------------
+  function paintReady() {
+    const items = [
+      { ok: !!t.connected, on: "HighLevel connected", off: "HighLevel not connected", go: "highlevel" },
+      { ok: !!t.backfilled, on: "Customer addresses backfilled", off: "Backfill has not run - sends fail closed", go: null },
+      { ok: !!t.calendarId, on: "Booking calendar set", off: "No calendar - the claim button stays hidden", go: "highlevel" },
+      { ok: !!t.subaccountId, on: "thanks.io sub-account set", off: "No mail account - nothing can be billed", go: "mail" },
+      { ok: weights.length > 0, on: "Prizes set", off: "No prizes - the scratch card has nothing to reveal", go: "prizes" },
+      { ok: true, on: t.landingUrl ? "Landing page: own domain" : "Landing page: platform default", off: "", go: "landing" },
+    ];
+    $("ws-ready").innerHTML = items.map((it) => `
+      <button class="r ${it.ok ? "" : "no"}" ${it.go ? `data-go="${it.go}"` : "disabled"}>
+        ${it.ok ? tick : bang}<span>${esc(it.ok ? it.on : it.off)}</span>
+        ${it.go ? '<span class="why">Set up</span>' : ""}
+      </button>`).join("");
+    $("ws-ready").querySelectorAll("[data-go]").forEach((b) => b.onclick = () => goto(b.dataset.go));
+  }
+
+  function paintGhlStatus() {
+    $("ws-ghl-status").innerHTML = t.connected ? `
+      <div class="good-box">
+        <div class="h"><svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Connected by OAuth</div>
+        <div style="margin-top:12px">
+          <div class="kv"><span class="k">Location</span><span class="val"><code style="font-size:12px">${esc(t.id)}</code></span></div>
+          <div class="kv"><span class="k">Token</span><span class="val" style="color:var(--good)">Rotating on schedule</span></div>
+        </div>
+      </div>
+      <p class="hint" style="margin:-8px 0 4px">Tokens are refreshed by WF0 every half hour. If a client uninstalls the app in HighLevel the row is paused automatically.</p>` : `
+      <div class="warn-box">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div>No live token for this location. Calendars will not load and no contact can be written until the Ripple app is authorized again on this sub-account.</div>
+      </div>
+      <button class="btn" id="ws-reauth"><svg viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Authorize in HighLevel</button>
+      <div id="ws-reauth-status"></div>`;
+    const rb = $("ws-reauth");
+    if (rb) rb.onclick = async () => {
+      rb.disabled = true; rb.textContent = "Preparing install link...";
+      try {
+        const r = await adminOp("startInstall", {});
+        if (!r.url) throw new Error("No install URL returned");
+        window.open(r.url, "_blank", "noopener");
+        $("ws-reauth-status").innerHTML = `<div class="info-box" style="margin-top:12px;background:var(--good-wash);border-color:var(--good)">Install opened in a new tab. Authorize there, then reload this page.</div>`;
+      } catch (e) {
+        $("ws-reauth-status").innerHTML = `<div class="info-box" style="margin-top:12px;background:var(--coral-wash);border-color:var(--coral)">Could not start the install: ${esc(e.message)}</div>`;
+        rb.disabled = false; rb.textContent = "Authorize in HighLevel";
+      }
+    };
+  }
+
+  // -- Landing / booking live hints -----------------------------------------
+  const show = (el, msg) => { el.textContent = msg; el.classList.remove("hidden"); };
+  const clear = (el) => { el.textContent = ""; el.classList.add("hidden"); };
+  const linkTo = (a, url) => {
+    const ok = isUrl(url);
+    a.href = ok ? url : "#";
+    a.setAttribute("aria-disabled", ok ? "false" : "true");
+  };
+
+  function paint() {
+    const landing = $("d-landing").value.trim();
+    $("d-landing-hint").innerHTML = landing
+      ? "Overrides the platform default for this client."
+      : ("Using the platform default: <code>" + esc(PLATFORM.landing_base_url || "not set") + "</code>");
+    linkTo($("d-landing-open"), landing || PLATFORM.landing_base_url);
+    $("d-landing-warn").classList.toggle("hidden", landing === t.landingUrl);
+
+    const bookPage = $("d-bookpage").value.trim();
+    $("d-bookpage-hint").innerHTML = bookPage
+      ? "Overrides the platform default for this client."
+      : ("Using the platform default: <code>" + esc(PLATFORM.booking_base_url || "not set") + "</code>");
+    linkTo($("d-bookpage-open"), bookPage || PLATFORM.booking_base_url);
+
+    const custom = $("d-custom").checked;
+    $("d-booking").readOnly = !custom;
+    if (!custom) {
+      const cal = $("d-calendar").value;
+      $("d-booking").value = cal ? BOOKING_BASE + cal : "";
+    }
+    linkTo($("d-booking-open"), $("d-booking").value);
+  }
+
+  $("d-load").onclick = async () => {
+    const btn = $("d-load"), keep = $("d-calendar").value;
+    btn.disabled = true; btn.textContent = "Loading...";
+    clear($("d-cal-err"));
+    try {
+      const r = await adminOp("listCalendars", { locationId: t.id });
+      calendars = r.calendars || [];
+      const sel = $("d-calendar");
+      sel.innerHTML = '<option value="">No calendar set</option>' +
+        calendars.map((c) => `<option value="${esc(c.id)}">${esc(c.name || c.id)}</option>`).join("");
+      if (keep && !calendars.some((c) => c.id === keep)) {
+        sel.insertAdjacentHTML("beforeend",
+          `<option value="${esc(keep)}">No longer in HighLevel - ${esc(keep)}</option>`);
+        show($("d-cal-err"), "The saved calendar no longer exists in this account. Pick a replacement.");
+      }
+      sel.value = keep;
+      if (!calendars.length) show($("d-cal-err"), "This account has no calendars yet. Create one in HighLevel first.");
+      paint();
+    } catch (e) {
+      // Only blame the scope when HighLevel actually refused us. Anything else
+      // (an unknown action, a missing token, a 500) needs its own message.
+      const scopeIssue = /401|403|scope/i.test(e.message);
+      show($("d-cal-err"), scopeIssue
+        ? e.message + " - check the app has the calendars read scope."
+        : e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 0 1 14-5M20 12a8 8 0 0 1-14 5M18 3v4h-4M6 21v-4h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Load';
+    }
+  };
+
+  ["input", "change"].forEach((ev) => {
+    $("d-landing").addEventListener(ev, paint);
+    $("d-bookpage").addEventListener(ev, paint);
+    $("d-calendar").addEventListener(ev, paint);
+    $("d-custom").addEventListener(ev, paint);
+    $("d-booking").addEventListener(ev, () => linkTo($("d-booking-open"), $("d-booking").value));
+  });
+
+  // -- Prizes ---------------------------------------------------------------
+  const xIcon = '<svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+  function paintPrizes() {
+    const total = weights.reduce((s, x) => s + (Number(x.w) || 0), 0) || 1;
+    $("prize-rows").innerHTML = weights.length ? weights.map((w, i) => {
+      const used = claimed[w.idx] || 0;
+      const capNum = w.cap === "" ? null : Number(w.cap);
+      const exhausted = capNum !== null && used >= capNum;
+      const usedLabel = !statsLoaded ? "-" : (capNum === null ? used + " claimed" : used + " / " + capNum);
+      return `
+      <div class="prizerow" style="display:grid;grid-template-columns:${PGRID};gap:6px;align-items:center;margin-bottom:8px">
+        <input data-p="label" data-i="${i}" value="${esc(w.label)}" placeholder="First treatment FREE">
+        <input data-p="sub" data-i="${i}" value="${esc(w.sub)}" placeholder="Your first barrier spray, on us.">
+        <input data-p="code_prefix" data-i="${i}" value="${esc(w.code_prefix)}" placeholder="FREESPRAY" style="font-size:12px;text-transform:uppercase">
+        <input data-p="w" data-i="${i}" type="number" min="0" value="${w.w}" title="Weight">
+        <input data-p="cap" data-i="${i}" type="number" min="1" value="${w.cap}" placeholder="none" title="Max claims - blank for unlimited">
+        <span style="font-size:11.5px;color:${exhausted ? "var(--coral)" : "var(--muted)"};text-align:center;font-weight:${exhausted ? 700 : 400}">
+          ${((w.w / total) * 100).toFixed(1)}%<br><span style="font-size:10.5px">${usedLabel}</span>
+        </span>
+        <button class="iconbtn" data-del="${i}" title="Remove">${xIcon}</button>
+      </div>`;
+    }).join("") : '<div style="color:var(--muted);font-size:13px;padding:8px 0">No prizes yet - add one below.</div>';
+
+    $("prize-total").textContent = "Total weight: " + total;
+
+    $("prize-rows").querySelectorAll("[data-p]").forEach((el) => {
+      el.oninput = () => {
+        const i = +el.dataset.i, key = el.dataset.p;
+        // Repainting detaches this input, so the delegated dirty listener on
+        // ws-body would find no pane to blame. Mark it here instead.
+        markDirty("prizes");
+        if (key === "w") { weights[i].w = Number(el.value); paintPrizes(); }
+        else if (key === "cap") { weights[i].cap = el.value === "" ? "" : Number(el.value); paintPrizes(); }
+        else if (key === "code_prefix") { weights[i].code_prefix = el.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); el.value = weights[i].code_prefix; }
+        else { weights[i][key] = el.value; }
+      };
+    });
+    $("prize-rows").querySelectorAll("[data-del]").forEach((el) => {
+      el.onclick = () => {
+        const i = +el.dataset.del;
+        // Deleting a prize that has already been claimed orphans those codes:
+        // the landing page can no longer resolve what the neighbour was promised.
+        if ((claimed[weights[i].idx] || 0) > 0 &&
+            !confirm("This prize has already been claimed by " + claimed[weights[i].idx] +
+                     " neighbour(s). Removing it leaves those codes without a description. Remove anyway?")) return;
+        weights.splice(i, 1); markDirty("prizes"); paintPrizes();
+      };
+    });
+  }
+
+  $("prize-add").onclick = () => {
+    const nextIdx = weights.length ? Math.max.apply(null, weights.map((w) => w.idx)) + 1 : 0;
+    weights.push({ idx: nextIdx, label: "Prize " + (nextIdx + 1), sub: "", code_prefix: "", w: 1, cap: "" });
+    markDirty("prizes"); paintPrizes();
+  };
+
+  function loadPrizeStats() {
+    adminOp("listPrizeStats", { locationId: t.id }).then((r) => {
+      claimed = (r && r.claimed) || {};
+      statsLoaded = true;
+      if ($("prize-rows")) paintPrizes();
+    }).catch(() => { /* counts are informational; editing still works */ });
+  }
+
+  // -- Users ----------------------------------------------------------------
+  function paintTeam() {
+    $("team-list").innerHTML = team.length ? team.map((u) => `
+      <div class="userrow">
+        <div class="who"><span class="uav">${esc((u.email[0] || "?").toUpperCase())}</span><span style="font-size:13.5px">${esc(u.email)}${u.full_name ? ` <span style="color:var(--muted)">- ${esc(u.full_name)}</span>` : ""}</span></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="loc-role role-${u.role === "admin" ? "admin" : "viewer"}" style="font-size:11px">${esc(u.role)}</span>
+          <button class="iconbtn" data-reset="${u.user_id}" title="Set password"><svg viewBox="0 0 24 24" fill="none"><path d="M12 15v2M8 11V7a4 4 0 0 1 8 0v4M6 11h12v9H6z" stroke="currentColor" stroke-width="1.6"/></svg></button>
+          <button class="iconbtn" data-rm="${u.user_id}" title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        </div>
+      </div>`).join("") : '<div style="color:var(--muted);font-size:13px;padding:12px 14px">No users yet - create one below.</div>';
+
+    $("team-list").querySelectorAll("[data-rm]").forEach((b) => b.onclick = async () => {
+      try {
+        await adminOp("removeTeamMember", { locationId: t.id, userId: b.dataset.rm });
+        team = team.filter((x) => x.user_id !== b.dataset.rm);
+        t.users = team; paintTeam(); render(); toast("User removed.");
+      } catch (e) { toast("Could not remove the user: " + e.message); }
+    });
+
+    $("team-list").querySelectorAll("[data-reset]").forEach((b) => b.onclick = () => {
+      const pw = prompt("Set a new password for this user (at least 8 characters):");
+      if (!pw || pw.length < 8) { if (pw !== null) toast("That password is too short."); return; }
+      adminOp("resetPassword", { userId: b.dataset.reset, newPassword: pw })
+        .then(() => toast("Password set."))
+        .catch((e) => toast("Could not set the password: " + e.message));
+    });
+  }
+
+  async function refreshTeam() {
+    try { const r = await adminOp("listTeam", { locationId: t.id }); team = r.team || []; }
+    catch (e) { team = []; }
+    t.users = team;
+    paintTeam();
+  }
+
+  $("u-add").onclick = async () => {
+    const email = $("u-email").value.trim();
+    const fullName = $("u-name").value.trim();
+    const customPassword = $("u-pass").value.trim();
+    const role = $("u-role").value;
+    if (!email.includes("@")) { toast("Enter a valid email address."); return; }
+    try {
+      const r = await adminOp("addTeamMember", { locationId: t.id, email, fullName, role, customPassword });
+      await refreshTeam();
+      render();
+      if (r.linked) { toast("Existing user linked to this location."); }
+      else {
+        $("u-result").innerHTML =
+          `<div class="info-box" style="margin-top:10px;background:var(--good-wash);border-color:var(--good)">
+             User created. Hand off these credentials:<br>
+             <strong>Email:</strong> ${esc(email)}<br>
+             <strong>Password:</strong> <code style="font-size:13px">${esc(r.password)}</code>
+             ${r.wasAutoGenerated ? '<br><span style="font-size:12px;color:var(--muted)">(auto-generated - copy it now)</span>' : ""}
+           </div>`;
+      }
+    } catch (e) { toast("Could not create the user: " + e.message); }
+  };
+
+  // -- Danger zone ----------------------------------------------------------
+  function paintToggle() {
+    const b = $("ws-toggle");
+    b.className = "btn " + (t.status === "active" ? "danger" : "");
+    b.textContent = t.status === "active" ? "Suspend this location" : "Reactivate this location";
+  }
+  $("ws-toggle").onclick = async () => {
+    const next = t.status === "active" ? "suspended" : "active";
+    const b = $("ws-toggle"); b.disabled = true;
+    try {
+      await adminOp("updateLocation", { locationId: t.id, updates: { paused: next === "suspended" } });
+      t.status = next;
+      paintToggle(); render();
+      toast(t.name + (next === "suspended" ? " suspended." : " reactivated."));
+    } catch (e) { toast("Could not change the status: " + e.message); }
+    finally { b.disabled = false; }
+  };
+
+  // -- Save: one write for every drafted section ----------------------------
+  function fail(k, elId, errId, msg) {
+    goto(k);
+    if (errId) show($(errId), msg); else toast(msg);
+    if (elId) { $(elId).classList.add("bad"); $(elId).focus(); }
+    return false;
+  }
+
+  $("ws-save").onclick = async () => {
+    const name = $("m-name").value.trim();
+    const landing = $("d-landing").value.trim();
+    const cal = $("d-calendar").value;
+    const booking = $("d-booking").value.trim();
+    const sub = $("d-sub").value.trim();
+    const bookPage = $("d-bookpage").value.trim();
+    const accent = $("d-accent").value.trim();
+    const pCard = $("d-price-card").value.trim();
+    const pLookup = $("d-price-lookup").value.trim();
+
+    ["d-landing-err", "d-sub-err", "d-cal-err", "d-bookpage-err", "d-theme-err", "d-price-err", "prize-err"]
+      .forEach((i) => clear($(i)));
+    ["d-landing", "d-sub", "m-name", "d-bookpage", "d-accent", "d-price-card", "d-price-lookup"]
+      .forEach((i) => $(i).classList.remove("bad"));
+
+    if (!name) return fail("general", "m-name", null, "The franchise name cannot be empty.");
+    if (landing && !isUrl(landing)) return fail("landing", "d-landing", "d-landing-err",
+      "Enter a full address starting with https://, or leave it blank to use the default.");
+    if (booking && !isUrl(booking)) return fail("highlevel", null, "d-cal-err",
+      "Enter a full booking link starting with https://");
+    if (bookPage && !isUrl(bookPage)) return fail("landing", "d-bookpage", "d-bookpage-err",
+      "Enter a full address starting with https://, or leave it blank to use the default.");
+    if ((pCard && !(strToCents(pCard) > 0)) || (pLookup && !(strToCents(pLookup) > 0)))
+      return fail("mail", null, "d-price-err", "Prices must be a positive amount, like 1.50 - or blank for the platform rate.");
+    if (accent && !/^#[0-9a-fA-F]{3,8}$/.test(accent))
+      return fail("look", "d-accent", "d-theme-err", "Colours must be hex, like #3FA9F5.");
+
+    // idx is the prize's identity for the life of the client: prize_visits
+    // rows point at it and caps are counted by it. Keep the number a prize was
+    // saved with; only a newly added prize gets a fresh one.
+    const clean = weights.map((w, i) => ({
+      idx: typeof w.idx === "number" ? w.idx : i,
+      label: (w.label || "Prize " + (i + 1)).trim(),
+      sub: (w.sub || "").trim(),
+      code_prefix: (w.code_prefix || "").trim().toUpperCase(),
+      w: Number(w.w) || 0,
+      cap: w.cap === "" ? null : Number(w.cap),
+    }));
+    if (dirty.has("prizes") || clean.length) {
+      const problem = clean.find((p) => p.cap !== null && (!Number.isInteger(p.cap) || p.cap < 1))
+        ? "Caps must be whole numbers of 1 or more, or blank for unlimited."
+        : clean.some((p) => !p.label) ? "Every prize needs a name."
+        : (clean.length && clean.reduce((s, p) => s + p.w, 0) <= 0)
+        ? "At least one prize needs a weight above zero, or nothing can be won."
+        : null;
+      if (problem) return fail("prizes", null, "prize-err", problem);
+    }
+
+    // Only mapped fields are stored; a blank input removes the mapping rather
+    // than saving an empty id that would fail on every write.
+    const nextFields = {};
+    [["source_job", "d-f-job"], ["prize_code", "d-f-code"],
+     ["card_id", "d-f-card"], ["first_touch", "d-f-touch"],
+     ["preferred_date", "d-f-date"], ["preferred_time", "d-f-time"],
+     ["prize", "d-f-prize"]].forEach((pair) => {
+      const val = $(pair[1]).value.trim();
+      if (val) nextFields[pair[0]] = val;
+    });
+
+    // Only send keys that were actually set: an empty theme object keeps the
+    // platform look rather than writing blanks over it.
+    const nextTheme = Object.assign({}, t.theme || {});
+    nextTheme.scratch = { background: $("d-scratch").value };
+    nextTheme.colors = Object.assign({}, nextTheme.colors || {});
+    if (accent) nextTheme.colors.accent = accent; else delete nextTheme.colors.accent;
+    nextTheme.copy = Object.assign({}, nextTheme.copy || {});
+    const headline = $("d-headline").value.trim();
+    const ctaText = $("d-ctatext").value.trim();
+    if (headline) nextTheme.copy.headline = headline; else delete nextTheme.copy.headline;
+    if (ctaText) nextTheme.copy.cta = ctaText; else delete nextTheme.copy.cta;
+
+    const btn = $("ws-save");
+    btn.disabled = true; btn.textContent = "Saving...";
+    try {
+      await adminOp("updateLocation", {
+        locationId: t.id,
+        updates: {
+          client_name: name,
+          landing_url: landing || null,
+          ghl_calendar_id: cal || null,
+          booking_url: booking || null,
+          thanksio_subaccount_id: sub || null,
+          booking_page_url: bookPage || null,
+          price_per_card_cents: pCard ? strToCents(pCard) : null,
+          price_per_lookup_cents: pLookup ? strToCents(pLookup) : null,
+          theme: nextTheme,
+          ghl_fields: nextFields,
+        },
+      });
+      // Prize weights are a separate action, so only touch them when edited -
+      // an untouched location keeps whatever the owner set in their own portal.
+      if (dirty.has("prizes")) {
+        await adminOp("setPrizeWeights", { locationId: t.id, prizeWeights: clean });
+        t.prizeWeights = clean;
+        weights = clean.map((w) => Object.assign({}, w, { cap: w.cap === null ? "" : w.cap }));
+      }
+
+      t.name = name; t.landingUrl = landing; t.calendarId = cal; t.bookingUrl = booking;
+      t.subaccountId = sub; t.bookingPageUrl = bookPage;
+      t.theme = nextTheme; t.ghlFields = nextFields;
+      t.priceCard = pCard ? strToCents(pCard) : null;
+      t.priceLookup = pLookup ? strToCents(pLookup) : null;
+
+      dirty.clear(); paintDirty(); paintReady(); paintPrizes();
+      render();
+      toast("Settings saved.");
+    } catch (e) {
+      if (e.field === "thanksio_subaccount_id") fail("mail", "d-sub", "d-sub-err", e.message);
+      else if (e.field === "landing_url") fail("landing", "d-landing", "d-landing-err", e.message);
+      else if (e.field === "ghl_calendar_id") fail("highlevel", null, "d-cal-err", e.message);
+      else toast("Save failed: " + e.message);
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Save settings';
+    }
+  };
+
+  // -- First paint ----------------------------------------------------------
+  $("d-scratch").value = ((theme.scratch || {}).background) || "leaves";
+  paintReady(); paintGhlStatus(); paintPrizes(); paintTeam(); paintToggle(); paint(); paintDirty();
+  goto(sect);
+}
+
+// -- Platform and Ember admin modals ---------------------------------------
+function modalPlatformAddLocation() {
+  openModal(`
+    <div class="modal-head"><div><div class="t">Add a BizLab location</div>
+      <div class="s">Choose which product this location will use</div></div>${closeX}</div>
+    <div class="modal-body">
+      <div class="info-box">A BizLab location may use <strong>Ripple</strong>, <strong>Ember</strong>, or both. Product enrollment and configuration remain separate.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+        <button id="platform-choose-ripple" style="border:1px solid var(--line);background:#fff;border-radius:13px;padding:18px;text-align:left;color:var(--ink)">
+          <span style="width:34px;height:34px;border-radius:10px;background:var(--coral-wash);color:var(--coral);display:grid;place-items:center;margin-bottom:10px">
+            <svg viewBox="0 0 24 24" fill="none" style="width:19px;height:19px"><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.4" opacity=".65"/><circle cx="12" cy="12" r="10.5" stroke="currentColor" stroke-width="1.2" opacity=".35"/></svg>
+          </span>
+          <strong style="display:block;font-size:14px">Connect Ripple Location</strong>
+          <span style="display:block;color:var(--muted);font-size:11.5px;line-height:1.5;margin-top:5px">Install Ripple on a HighLevel sub-account through OAuth.</span>
+        </button>
+        <button id="platform-choose-ember" style="border:1px solid #F7CCAE;background:var(--ember-wash);border-radius:13px;padding:18px;text-align:left;color:var(--ink)">
+          <span style="width:34px;height:34px;border-radius:10px;background:#fff;display:grid;place-items:center;margin-bottom:10px;font-size:18px">🔥</span>
+          <strong style="display:block;font-size:14px;color:var(--ember-deep)">Enroll Ember Location</strong>
+          <span style="display:block;color:var(--muted);font-size:11.5px;line-height:1.5;margin-top:5px">Create an Ember-only tenant or enroll an existing Ripple location.</span>
+        </button>
+      </div>
+      <div class="hint" style="margin-top:14px">For a location using both products, connect Ripple first and then enroll that same location in Ember.</div>
+      <div class="actions" style="margin-top:18px"><button class="btn ghost" data-close>Cancel</button></div>
+    </div>`, 580);
+
+  document.getElementById("platform-choose-ripple").onclick = () => {
+    closeGuard = null;
+    document.getElementById("modal-mount").innerHTML = "";
+    modalCreate();
+  };
+  document.getElementById("platform-choose-ember").onclick = () => {
+    closeGuard = null;
+    document.getElementById("modal-mount").innerHTML = "";
+    modalEmberEnrollment();
+  };
+}
+
+function modalEmberEnrollment() {
+  const rippleOptions = TENANTS.map((t) =>
+    `<option value="${esc(t.id)}">${esc(t.name)} · ${esc(t.id)}</option>`).join("");
+  openModal(`
+    <div class="modal-head"><div><div class="t">Enroll a location in Ember</div>
+      <div class="s">Creates an Ember tenant without changing Ripple</div></div>${closeX}</div>
+    <div class="modal-body">
+      <div class="info-box" style="background:var(--ember-wash);border-color:#F7CCAE">
+        Ember enrollment is a separate product action. Existing Ripple settings, queues, postcards and users are not copied or changed.
+      </div>
+      <label class="field"><span class="lbl">Existing Ripple location (optional)</span>
+        <select id="ember-enroll-source"><option value="">New Ember-only location</option>${rippleOptions}</select>
+        <div class="hint">Choose a Ripple location only when the same HighLevel sub-account is opting into Ember.</div>
+      </label>
+      <label class="field"><span class="lbl">Ember display name</span>
+        <input id="ember-enroll-name" placeholder="Example Home Services">
+      </label>
+      <label class="field"><span class="lbl">Ember location ID</span>
+        <input id="ember-enroll-id" placeholder="EXAMPLE-TAMPA">
+        <div class="hint">Use a BizLab tenant ID such as <code>TEST-PRITCHARD</code>. Do not enter a HighLevel custom-field ID here.</div>
+      </label>
+      <div class="row2">
+        <label class="field"><span class="lbl">FieldRoutes office ID</span>
+          <input id="ember-enroll-office" placeholder="41">
+        </label>
+        <label class="field"><span class="lbl">Timezone</span>
+          <select id="ember-enroll-timezone"><option>America/New_York</option><option>America/Chicago</option><option>America/Denver</option><option>America/Los_Angeles</option></select>
+        </label>
+      </div>
+      <div class="good-box">
+        <div class="h">Safe testing defaults</div>
+        <div>Enrollment starts in <strong>testing</strong> with sending disabled and historical backfill incomplete. Incoming webhooks may be stored, but Ember cannot send messages until onboarding is completed.</div>
+      </div>
+      <div class="actions"><button class="btn ghost" data-close>Cancel</button>
+        <button class="btn ember-primary" id="ember-enroll-save">Enroll Ember Location</button></div>
+    </div>`);
+
+  const source = document.getElementById("ember-enroll-source");
+  source.onchange = () => {
+    const t = tenantById(source.value);
+    if (!t) return;
+    document.getElementById("ember-enroll-name").value = t.name;
+    document.getElementById("ember-enroll-id").value = t.id;
+  };
+  document.getElementById("ember-enroll-save").onclick = async () => {
+    const button = document.getElementById("ember-enroll-save");
+    const displayName = document.getElementById("ember-enroll-name").value.trim();
+    const locationId = document.getElementById("ember-enroll-id").value.trim().toUpperCase();
+    const fieldroutesOfficeId = document.getElementById("ember-enroll-office").value.trim();
+    const timezone = document.getElementById("ember-enroll-timezone").value;
+    const ghlLocationId = source.value || null;
+
+    if (!displayName || !locationId || !fieldroutesOfficeId) {
+      toast("Display name, Ember location ID, and FieldRoutes office ID are required.");
+      return;
+    }
+    if (!/^[A-Z0-9][A-Z0-9_-]{2,63}$/.test(locationId)) {
+      toast("Use 3–64 letters, numbers, hyphens, or underscores for the Ember location ID.");
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Enrolling…";
+    try {
+      await adminOp("createEmberLocation", {
+        locationId, displayName, fieldroutesOfficeId, timezone, ghlLocationId,
+      });
+      closeModal();
+      await loadEmber();
+      toast(displayName + " was enrolled in Ember in testing mode.");
+    } catch (err) {
+      toast("Could not enroll Ember location: " + (err.message || err));
+      button.disabled = false;
+      button.textContent = "Enroll Ember Location";
+    }
+  };
+}
+
+function modalEmberManage(id) {
+  const l = EMBER_LOCATIONS.find((x) => x.id === id);
+  if (!l) return;
+  const offices = l.offices.length
+    ? l.offices.map((o) => `<div class="kv"><span class="k">FieldRoutes office</span><span class="val">Office ${esc(o.fieldroutes_office_id)} · ${o.enabled ? "enabled" : "disabled"}</span></div>`).join("")
+    : '<div class="warn-box" style="margin-top:12px">No FieldRoutes office is mapped. Incoming webhooks will be rejected safely.</div>';
+  openModal(`
+    <div class="modal-head"><div><div class="t">Manage Ember · ${esc(l.name)}</div>
+      <div class="s">${esc(l.id)} · separate from Ripple configuration</div></div>${closeX}</div>
+    <div class="modal-body">
+      <div class="good-box"><div class="h">🔥 Ember enrollment</div>
+        <div class="kv"><span class="k">Onboarding state</span><span class="val"><span class="pill ember">${esc(l.status)}</span></span></div>
+        <div class="kv"><span class="k">Master switch</span><span class="val">${l.enabled ? "On" : "Off"}</span></div>
+        <div class="kv"><span class="k">Historical backfill</span><span class="val">${l.backfilled ? "Complete" : "Incomplete"}</span></div>
+        ${offices}
+      </div>
+      <div class="info-box">Editing Ember mappings and settings will be connected through an Ember-only admin Edge Function. This version is intentionally read-only so it cannot write to Ripple or bypass Ember RLS.</div>
+      <div class="actions"><button class="btn ghost" data-close>Close</button>
+        <button class="btn ember-primary" id="ember-open-center">Open control center</button></div>
+    </div>`);
+  document.getElementById("ember-open-center").onclick = () => {
+    window.location.href = "/ember-control-center?loc=" + encodeURIComponent(l.id);
+  };
+}
+
+// -- Event delegation --
+document.addEventListener("click", (e) => {
+  // close modal
+  if (e.target.closest("[data-close]") || e.target.matches("[data-scrim]")) { closeModal(); return; }
+
+  const open = e.target.closest("[data-open]");
+  if (open) {
+    // Leaving the page throws away a draft just as surely as closing the panel.
+    if (closeGuard && closeGuard() === false) return;
+    window.location.href = "/dashboard?loc=" + encodeURIComponent(tenantById(open.dataset.open).slug);
+    return;
+  }
+
+  const manage = e.target.closest("[data-manage]");
+  if (manage) { modalWorkspace(manage.dataset.manage); return; }
+
+  const emberOpen = e.target.closest("[data-ember-open]");
+  if (emberOpen) {
+    window.location.href = "/ember-control-center?loc=" + encodeURIComponent(emberOpen.dataset.emberOpen);
+    return;
+  }
+  const emberManage = e.target.closest("[data-ember-manage]");
+  if (emberManage) { modalEmberManage(emberManage.dataset.emberManage); return; }
+});
+
+document.getElementById("add-btn").onclick = modalCreate;
+document.getElementById("platform-add-location").onclick = modalPlatformAddLocation;
+document.getElementById("platform-btn").onclick = modalPlatform;
+document.getElementById("ember-enroll-btn").onclick = modalEmberEnrollment;
+document.getElementById("ember-refresh-btn").onclick = async () => {
+  const b = document.getElementById("ember-refresh-btn");
+  b.disabled = true;
+  try { await loadEmber(); toast("Ember locations refreshed."); }
+  catch (_) { toast("Could not refresh Ember locations."); }
+  finally { b.disabled = false; }
+};
+document.getElementById("search").oninput = (e) => { query = e.target.value; renderRows(); };
+document.getElementById("ember-search").oninput = (e) => { emberQuery = e.target.value; renderEmber(); };
+document.getElementById("segbar").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-s]"); if (!b) return;
+  statusFilter = b.dataset.s;
+  document.querySelectorAll(".seg").forEach((x) => x.classList.toggle("on", x === b));
+  renderRows();
+});
+document.getElementById("ember-segbar").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-es]"); if (!b) return;
+  emberStatusFilter = b.dataset.es;
+  document.querySelectorAll("#ember-segbar .seg").forEach((x) => x.classList.toggle("on", x === b));
+  renderEmber();
+});
+document.querySelector(".product-nav").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-product]"); if (!b) return;
+  const product = b.dataset.product;
+  document.querySelectorAll(".product-tab").forEach((x) => x.classList.toggle("on", x === b));
+  document.getElementById("ripple-admin-view").classList.toggle("hidden", product !== "ripple");
+  document.getElementById("ember-admin-view").classList.toggle("hidden", product !== "ember");
+  if (product === "ember") renderEmber();
+});
+</script>
+</body>
+</html>

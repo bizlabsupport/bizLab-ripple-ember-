@@ -1,0 +1,30 @@
+project_id = "bizlab-ripple-ember"
+
+# Exported deployed JWT settings; these do not bypass application-level checks.
+# No automatic deployment is configured.
+[functions.admin-operations]
+verify_jwt = false
+
+[functions.send-postcards]
+verify_jwt = false
+
+[functions.provision-thanksio]
+verify_jwt = false
+
+[functions.landing]
+verify_jwt = false
+
+[functions.ghl-intake]
+verify_jwt = false
+
+[functions.drain-queue]
+verify_jwt = false
+
+[functions.ember-fieldroutes-webhook]
+verify_jwt = false
+
+[functions.ember-operations]
+verify_jwt = true
+
+[functions.ember-fieldroutes-backfill]
+verify_jwt = false

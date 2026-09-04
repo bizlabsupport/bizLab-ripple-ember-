@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BizLab — Choose a location</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #24313D; --muted: #5F6E7B;
+    --coral: #B01657; --coral-deep: #8A1044;
+    --blue: #007DC9; --blue-tint: #E5F2FB;
+    --kraft: #D9B77E; --sky: #EAF4FA;
+    --navy: #00263D; --navy-deep: #001625;
+    --paper: #FFFFFF; --line: #E3E9EE;
+    --ember: #F4742B; --ember-deep: #D95D18; --ember-wash: #FFF0E4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Nunito Sans', system-ui, sans-serif; color: var(--ink);
+    background:
+      radial-gradient(120% 90% at 50% -10%, #013a5c 0%, var(--navy) 55%, var(--navy-deep) 100%);
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 40px 20px;
+  }
+  h1, h2, h3 { font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; line-height: 1.1; }
+
+  .wrap { width: 100%; max-width: 560px; }
+  .brand-row { display: flex; align-items: center; gap: 11px; justify-content: center; margin-bottom: 28px; }
+  .brand-mark { overflow: hidden;
+    width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+  .brand-mark svg { width: 19px; height: 19px; }
+  .brand-name { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 21px; color: #fff; }
+
+  .head { text-align: center; margin-bottom: 26px; }
+  .head h1 { font-size: 28px; font-weight: 800; color: #fff; }
+  .head p { margin-top: 8px; color: #B9C7D2; font-size: 15px; }
+  .head .who { color: var(--kraft); font-weight: 700; }
+
+  .list { background: var(--paper); border-radius: 18px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,22,37,0.4); }
+  .loc {
+    display: flex; align-items: center; gap: 16px; padding: 18px 22px;
+    border-bottom: 1px solid var(--line); cursor: pointer; text-decoration: none; color: inherit;
+    transition: background 0.14s ease;
+  }
+  .loc:last-child { border-bottom: none; }
+  .loc:hover { background: var(--sky); }
+  .loc:focus-visible { outline: 3px solid rgba(0,125,201,0.5); outline-offset: -3px; }
+
+  .loc-mark {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    display: grid; place-items: center; font-family: 'Bricolage Grotesque', sans-serif;
+    font-weight: 800; font-size: 17px; color: #fff;
+  }
+  .m-coral { background: var(--coral); }
+  .m-blue { background: var(--blue); }
+  .m-navy { background: var(--navy); }
+
+  .loc-body { flex: 1; min-width: 0; }
+  .loc-name { font-weight: 800; font-size: 16px; color: var(--ink); }
+  .loc-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .loc-role {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 4px 9px; border-radius: 999px; flex-shrink: 0;
+  }
+  .role-admin { background: rgba(176,22,87,0.1); color: var(--coral); }
+  .role-viewer { background: var(--blue-tint); color: var(--blue); }
+  .loc-arrow { color: #B0BEC9; flex-shrink: 0; }
+  .products { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+  .product-link { display: inline-flex; align-items: center; gap: 5px; padding: 7px 10px; border-radius: 8px;
+    text-decoration: none; font-size: 11.5px; font-weight: 800; border: 1px solid; }
+  .product-link.ripple { color: var(--coral); background: rgba(176,22,87,.07); border-color: rgba(176,22,87,.22); }
+  .product-link.ember { color: var(--ember-deep); background: var(--ember-wash); border-color: #F7CCAE; }
+  .product-link.admin { color: var(--navy); background: var(--sky); border-color: #B9DDF3; }
+  .product-link:hover { filter: brightness(.97); }
+  .product-tags { display: flex; gap: 5px; margin-top: 6px; }
+  .product-tag { font-size: 9px; font-weight: 900; padding: 3px 7px; border-radius: 999px; }
+  .product-tag.ripple { color: var(--coral); background: rgba(176,22,87,.08); }
+  .product-tag.ember { color: var(--ember-deep); background: var(--ember-wash); }
+  .empty { padding: 28px 22px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.55; }
+
+  .foot { text-align: center; margin-top: 22px; }
+  .foot a { color: #7E90A0; font-size: 13.5px; text-decoration: none; }
+  .foot a:hover { color: #B9C7D2; }
+  @media (max-width: 620px) {
+    .loc { align-items: flex-start; flex-wrap: wrap; }
+    .products { width: 100%; padding-left: 60px; justify-content: flex-start; }
+    .loc-role { margin-left: auto; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand-row">
+      <span class="brand-mark" aria-hidden="true"><img src="https://assets.cdn.filesafe.space/mgtPoR3m74nz3aBLG05X/media/69820fab2dd9850430b60fb4.png" alt="BizLab" style="width:100%;height:100%;object-fit:contain;border-radius:inherit"/></span>
+      <span class="brand-name">BizLab</span>
+    </div>
+
+    <div class="head">
+      <h1>Choose a location</h1>
+      <p id="who-line">Loading your locations…</p>
+    </div>
+
+    <div class="list" role="list" id="loc-list">
+      <!-- rows rendered from Supabase on load -->
+    </div>
+
+    <div class="foot">
+      <a href="#" id="signout">Sign out</a>
+    </div>
+  </div>
+
+<!-- ── Ripple auth + tenant resolution, custom HTML hitting Supabase ── -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://dhizayohljxioxxzkhty.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoaXpheW9obGp4aW94eHpraHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODMyODEsImV4cCI6MjEwMDQ1OTI4MX0.MmcWiXK7hxPaMuWGPZLiA-vowFs3dJi6OqkOHKDCnUY";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey: 'ripple-auth',
+      storage: window.localStorage,
+      detectSessionInUrl: true
+    }
+  });
+
+  const markClass = (i) => ["m-coral", "m-blue", "m-navy"][i % 3];
+  const initials = (name) => (name.match(/\b\w/g) || []).slice(0, 2).join("").toUpperCase();
+
+  function esc(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, c =>
+      ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+  }
+
+  function renderRow(t) {
+    const strongestRole = t.rippleRole === "admin" || ["owner","admin","operator"].includes(t.emberRole)
+      ? "admin" : "viewer";
+    const roleClass = strongestRole === "admin" ? "role-admin" : "role-viewer";
+    const roleLabel = strongestRole === "admin" ? "Admin" : "Viewer";
+    const tags = [
+      t.hasRipple ? '<span class="product-tag ripple">Ripple</span>' : "",
+      t.hasEmber ? '<span class="product-tag ember">🔥 Ember</span>' : "",
+    ].join("");
+    const links = [
+      t.hasRipple ? `<a class="product-link ripple" href="/dashboard?loc=${encodeURIComponent(t.slug)}">◉ Open Ripple</a>` : "",
+      t.hasEmber ? `<a class="product-link ember" href="/ember-control-center?loc=${encodeURIComponent(t.slug)}">🔥 Open Ember</a>` : "",
+    ].join("");
+    return `
+      <div class="loc" role="listitem">
+        <span class="loc-mark ${markClass(t._i)}">${esc(initials(t.name))}</span>
+        <span class="loc-body">
+          <span class="loc-name">${esc(t.name)}</span>
+          <span class="loc-meta">${esc(t.slug)}${t.meta ? " · " + esc(t.meta) : ""}</span>
+          <span class="product-tags">${tags}</span>
+        </span>
+        <span class="loc-role ${roleClass}">${roleLabel}</span>
+        <span class="products">${links}</span>
+      </div>`;
+  }
+
+  // Wait for a session, retrying briefly — right after login the session can
+  // take a moment to land in storage, and bouncing immediately causes a
+  // login<->locations loop.
+  async function waitForSession(tries = 5) {
+    for (let i = 0; i < tries; i++) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) return session;
+      await new Promise(r => setTimeout(r, 250));
+    }
+    return null;
+  }
+
+  (async () => {
+    // 1. Guard: no session → back to login (after retrying).
+    const session = await waitForSession();
+    if (!session) { window.location.replace("/login"); return; }
+    const user = session.user;
+
+    // 2. Is this user the platform super admin? Use the security-definer RPC
+    //    so this never depends on view/RLS resolution during routing.
+    let isSuperAdmin = false;
+    try {
+      const { data: sa } = await sb.rpc("is_super_admin");
+      isSuperAdmin = sa === true;
+    } catch (_) { isSuperAdmin = false; }
+    const me = { is_super_admin: isSuperAdmin };
+
+    // 3. Resolve Ripple and Ember memberships independently. Matching
+    // location IDs are combined into one card with one button per product.
+    const [{ data: locs, error: rippleError },
+           { data: emberData, error: emberError }] = await Promise.all([
+      sb.rpc("my_locations"),
+      sb.functions.invoke("ember-operations", { body: { action: "listLocations" } }),
+    ]);
+
+    const list = document.getElementById("loc-list");
+    const whoLine = document.getElementById("who-line");
+
+    if (rippleError && emberError) {
+      whoLine.textContent = "Couldn't load your locations. Please try again.";
+      return;
+    }
+
+    const combined = new Map();
+    (locs || []).forEach((m) => combined.set(m.location_id, {
+      name: m.client_name || m.location_id, slug: m.location_id,
+      hasRipple: true, rippleRole: m.role, hasEmber: false, emberRole: null,
+    }));
+    const emberLocations = emberData?.locations || [];
+    (emberLocations || []).forEach((l) => {
+      const current = combined.get(l.location_id) || {
+        name: l.display_name || l.location_id, slug: l.location_id,
+        hasRipple: false, rippleRole: null, hasEmber: false, emberRole: null,
+      };
+      current.name = current.name || l.display_name || l.location_id;
+      current.hasEmber = true;
+      current.emberRole = l.role || "viewer";
+      current.meta = l.onboarding_status ? "Ember " + l.onboarding_status : "";
+      combined.set(l.location_id, current);
+    });
+    const tenants = Array.from(combined.values()).sort((a,b) => a.name.localeCompare(b.name))
+      .map((t,i) => Object.assign(t,{_i:i}));
+
+    // Platform owners always get the BizLab Super Admin entry.
+    if (me && me.is_super_admin) {
+      list.insertAdjacentHTML("beforeend", `
+        <div class="loc" role="listitem">
+          <span class="loc-mark m-coral" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" style="width:22px;height:22px">
+              <path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" stroke="#fff" stroke-width="1.6"/>
+            </svg>
+          </span>
+          <span class="loc-body">
+            <span class="loc-name">All locations</span>
+            <span class="loc-meta">Super Admin console — every franchise</span>
+          </span>
+          <span class="loc-role role-admin">Owner</span>
+          <span class="products"><a class="product-link admin" href="/admin">Open Super Admin</a></span>
+        </div>`);
+    } else if (tenants.length === 0) {
+      whoLine.textContent = `Signed in as ${user.email} — no locations assigned yet.`;
+      list.innerHTML = '<div class="empty">You do not currently have access to a Ripple or Ember location. Ask your platform administrator to assign one.</div>';
+    }
+
+    // 4. Skip the picker only when there is exactly one location and one
+    // product. If both products are enabled, let the user choose.
+    if (!(me && me.is_super_admin) && tenants.length === 1 &&
+        Number(tenants[0].hasRipple) + Number(tenants[0].hasEmber) === 1) {
+      const target = tenants[0].hasEmber ? "/ember-control-center?loc=" : "/dashboard?loc=";
+      window.location.replace(target + encodeURIComponent(tenants[0].slug));
+      return;
+    }
+
+    // 5. Render the rows.
+    tenants.forEach((t) => list.insertAdjacentHTML("beforeend", renderRow(t)));
+
+    const count = tenants.length;
+    whoLine.innerHTML = `Signed in as <span class="who">${user.email}</span>` +
+      (count ? ` — you manage ${count} location${count === 1 ? "" : "s"}.` : ".");
+  })();
+
+  // Sign out → clear session → login.
+  document.getElementById("signout").addEventListener("click", async (e) => {
+    e.preventDefault();
+    await sb.auth.signOut();
+    window.location.replace("/login");
+  });
+</script>
+</body>
+</html>

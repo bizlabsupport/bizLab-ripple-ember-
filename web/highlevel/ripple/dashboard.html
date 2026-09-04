@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ripple - Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!-- Map tiles: Leaflet + CARTO, no API key. Only the geocoding that produces
+     the coordinates needs a paid key. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --ink: #24313D; --muted: #5F6E7B;
+    --coral: #B01657; --coral-deep: #8A1044;
+    --blue: #007DC9; --blue-tint: #E5F2FB;
+    --kraft: #D9B77E; --sky: #EAF4FA;
+    --navy: #00263D; --navy-deep: #001625;
+    --paper: #FFFFFF; --line: #E3E9EE; --bg: #F4F7FA;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Nunito Sans', system-ui, sans-serif; color: var(--ink);
+    background: var(--bg); line-height: 1.55;
+  }
+  h1, h2, h3 { font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; line-height: 1.1; }
+
+  /* ---------- Top bar ---------- */
+  .bar {
+    position: sticky; top: 0; z-index: 30; background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--line);
+  }
+  .bar-in {
+    max-width: 1080px; margin: 0 auto; padding: 12px 24px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  }
+  .bar-left { display: flex; align-items: center; gap: 14px; }
+  .brand-mark { overflow: hidden;
+    width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex-shrink: 0;
+  }
+  .brand-mark svg { width: 18px; height: 18px; }
+  .brand-name { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 19px; color: var(--ink); }
+
+  /* Location switcher lives in the header */
+  .switcher {
+    display: flex; align-items: center; gap: 9px; padding: 7px 12px;
+    background: var(--sky); border: 1px solid var(--line); border-radius: 10px;
+    cursor: pointer; font-weight: 700; font-size: 14px; color: var(--ink);
+    margin-left: 6px;
+  }
+  .switcher:hover { border-color: #C6D2DB; }
+  .switcher .pin { width: 15px; height: 15px; color: var(--coral); }
+  .switcher .chev { width: 14px; height: 14px; color: var(--muted); }
+
+  .bar-right { display: flex; align-items: center; gap: 14px; }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 999px; background: var(--navy);
+    color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 13px;
+  }
+
+  .page { max-width: 1080px; margin: 0 auto; padding: 32px 24px 60px; }
+
+  /* The top bar is sticky and translucent, so page content scrolls beneath it.
+     Giving the head its own stacking context keeps it passing cleanly behind
+     the bar instead of appearing to collide with it. */
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 16px; margin-bottom: 24px; flex-wrap: wrap; position: relative; z-index: 1; }
+  .page-head h1 { font-size: 26px; font-weight: 800; }
+  .page-head p { color: var(--muted); font-size: 14px; margin-top: 4px; }
+  .btn {
+    font-family: inherit; font-weight: 800; font-size: 14.5px; background: var(--coral); color: #fff;
+    border: none; padding: 11px 20px; border-radius: 999px; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px; transition: background 0.15s ease;
+  }
+  .btn:hover { background: var(--coral-deep); }
+  .btn svg { width: 16px; height: 16px; }
+
+  /* ---------- HERO: Monday Report receipt ---------- */
+  .receipt-wrap { margin-bottom: 34px; }
+  .receipt {
+    position: relative; background: var(--paper); border-radius: 20px 20px 0 0;
+    box-shadow: 0 20px 50px rgba(0,38,61,0.1); padding: 30px 34px 26px; max-width: 560px;
+  }
+  /* torn-receipt bottom edge - nods to the "receipts" screenshot */
+  .receipt-wrap .tear {
+    max-width: 560px; height: 14px; display: block;
+    filter: drop-shadow(0 14px 22px rgba(0,38,61,0.08));
+  }
+  .receipt-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .receipt-title {
+    font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 15px;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--navy);
+  }
+  .receipt-date { font-size: 12.5px; color: var(--muted); }
+
+  .rline {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 13px 0; border-bottom: 1.5px dashed #DCE4EA;
+  }
+  .rline:first-of-type { padding-top: 0; }
+  .rline .lbl { color: var(--muted); font-size: 15px; }
+  .rline .val { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 20px; color: var(--ink); }
+  .rline.hot .val { color: var(--blue); }
+
+  .rtotal { text-align: center; padding: 22px 0 6px; }
+  .rtotal .big {
+    font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 42px;
+    color: var(--blue); line-height: 1;
+  }
+  .rtotal .cap { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .trace {
+    margin-top: 18px; background: var(--sky); border-radius: 10px; padding: 11px 15px;
+    font-size: 13.5px; color: var(--ink); text-align: center;
+  }
+  .trace b { color: var(--coral); }
+
+  /* ---------- Section grid ---------- */
+  .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px;
+  }
+  .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .card-head h3 { font-size: 17px; font-weight: 800; }
+  .card-head a { font-size: 13px; font-weight: 700; color: var(--blue); text-decoration: none; }
+  .card-head a:hover { text-decoration: underline; }
+
+  /* Batches / campaigns list */
+  .batch { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .batch:last-child { border-bottom: none; }
+  .batch-dot { width: 9px; height: 9px; border-radius: 999px; flex-shrink: 0; }
+  .d-live { background: #2FA96B; box-shadow: 0 0 0 3px rgba(47,169,107,0.16); }
+  .d-queued { background: var(--kraft); }
+  .d-done { background: #B0BEC9; }
+  .batch-body { flex: 1; min-width: 0; }
+  .batch-name { font-weight: 700; font-size: 14.5px; }
+  .batch-meta { font-size: 12.5px; color: var(--muted); }
+  .batch-count { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 15px; color: var(--ink); }
+
+  /* Promo pool */
+  .promo { padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .promo:last-child { border-bottom: none; }
+  .promo-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+  .promo-name { font-weight: 700; font-size: 14.5px; }
+  .promo-odds { font-size: 12.5px; color: var(--muted); font-weight: 700; }
+  .promo-bar { height: 7px; background: var(--sky); border-radius: 999px; overflow: hidden; }
+  .promo-bar span { display: block; height: 100%; border-radius: 999px; }
+  .cap-note { font-size: 11.5px; color: var(--muted); margin-top: 5px; }
+  .cap-note.warn { color: var(--coral); font-weight: 700; }
+
+
+
+  /* ---------- Control Center: view switcher, week + month ---------- */
+  /* The panel is light (--cc-ink on white), so everything here reads dark.  */
+  .cc-views { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    flex-wrap: wrap; margin-bottom: 16px; }
+  .cc-seg { display: inline-flex; background: var(--cc-bg); border: 1px solid var(--cc-line);
+    border-radius: 999px; padding: 3px; }
+  .cc-seg button { border: none; background: transparent; color: var(--cc-muted);
+    font-family: inherit; font-weight: 800; font-size: 12.5px; padding: 7px 16px; border-radius: 999px;
+    cursor: pointer; }
+  .cc-seg button:hover { color: var(--cc-ink); }
+  .cc-seg button.on { background: var(--cc-navy); color: #fff; }
+
+  .cc-nav { display: inline-flex; align-items: center; gap: 6px; }
+  .cc-nav button { width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--cc-line);
+    background: #fff; color: var(--cc-ink); cursor: pointer; font-family: inherit; font-size: 16px;
+    line-height: 1; display: grid; place-items: center; }
+  .cc-nav button:hover { border-color: #C6D2DB; background: var(--cc-bg); }
+  .cc-nav .lbl { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 15px;
+    color: var(--cc-navy); min-width: 172px; text-align: center; }
+  .cc-nav .today { width: auto; padding: 0 13px; font-size: 12.5px; font-weight: 800;
+    color: var(--cc-blue); border-color: var(--cc-line); }
+  .cc-nav .today:hover { background: var(--cc-blue-tint); border-color: #BBDDF2; }
+
+  /* a day heading inside the week view */
+  .cc-day { margin-bottom: 20px; }
+  .cc-day-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    padding: 0 2px 8px; border-bottom: 2px solid var(--cc-line); margin-bottom: 10px; }
+  .cc-day-head h3 { font-size: 15.5px; font-weight: 800; color: var(--cc-navy); }
+  .cc-day-head .m { font-size: 12px; color: var(--cc-muted); font-weight: 700; }
+  .cc-day.past .cc-day-head h3 { color: var(--cc-muted); }
+  .cc-day.past .cc-day-head { border-bottom-style: dashed; }
+
+  /* month grid */
+  .cc-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cc-cal .dow { text-align: center; font-size: 10.5px; font-weight: 800; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--cc-muted); padding-bottom: 2px; }
+  .cc-cell { min-height: 78px; border-radius: 11px; padding: 7px 9px; text-align: left;
+    background: #fff; border: 1px solid var(--cc-line); color: var(--cc-ink);
+    font-family: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+  .cc-cell:hover { border-color: var(--cc-blue); box-shadow: 0 2px 8px rgba(0,38,61,0.08); }
+  .cc-cell.blank { background: transparent; border-color: transparent; cursor: default; }
+  .cc-cell.blank:hover { border-color: transparent; box-shadow: none; }
+  .cc-cell.empty { background: var(--cc-bg); border-color: transparent; cursor: default; }
+  .cc-cell.empty:hover { border-color: transparent; box-shadow: none; }
+  .cc-cell.empty .d { color: var(--cc-muted); font-weight: 700; }
+  .cc-cell .d { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 13px;
+    color: var(--cc-navy); }
+  .cc-cell.today { border-color: var(--cc-coral); }
+  .cc-cell.today .d { color: var(--cc-coral); }
+  .cc-cell .c { font-size: 11.5px; color: var(--cc-muted); line-height: 1.35; font-weight: 600; }
+  .cc-cell .bars { display: flex; gap: 3px; margin-top: auto; }
+  .cc-cell .bars i { height: 4px; border-radius: 999px; flex: 1; background: var(--cc-line); }
+  .cc-cell .bars i.on { background: var(--cc-good); }
+  .cc-cell .bars i.off { background: #D3DCE4; }
+  .cc-cell.sent { background: var(--cc-good-wash); border-color: #BFE6D2; }
+  .cc-cell.sent .bars i { background: var(--cc-good); }
+  @media (max-width: 620px) {
+    .cc-cell { min-height: 60px; padding: 5px 6px; }
+    .cc-cell .c { font-size: 10.5px; }
+    .cc-nav .lbl { min-width: 118px; font-size: 13.5px; }
+    .cc-seg button { padding: 7px 12px; }
+  }
+
+  /* Prize editor */
+  .linkbtn { background: none; border: none; padding: 0; font-family: inherit; font-size: 13px;
+    font-weight: 700; color: var(--blue); cursor: pointer; }
+  .linkbtn:hover { text-decoration: underline; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .btn.ghost:hover { background: var(--bg); }
+  .btn.sm { padding: 8px 15px; font-size: 13px; }
+
+  .pz-scrim { position: fixed; inset: 0; background: rgba(0,38,61,0.42); backdrop-filter: blur(2px);
+    z-index: 60; display: flex; align-items: flex-start; justify-content: center; padding: 5vh 16px; }
+  .pz-modal { width: 100%; max-width: 700px; background: var(--paper); border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(0,38,61,0.28); display: flex; flex-direction: column;
+    max-height: 90vh; overflow: hidden; }
+  .pz-head { padding: 20px 24px; border-bottom: 1px solid var(--line); display: flex;
+    align-items: flex-start; justify-content: space-between; gap: 14px; }
+  .pz-head h3 { font-size: 18px; font-weight: 800; }
+  .pz-head p { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .pz-x { background: var(--bg); border: 1px solid var(--line); border-radius: 9px; width: 32px;
+    height: 32px; display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+  .pz-x svg { width: 16px; height: 16px; color: var(--ink); }
+  .pz-body { padding: 20px 24px; overflow-y: auto; }
+  .pz-note { font-size: 12.5px; background: var(--sky); border: 1px solid #CFE3F0; border-radius: 11px;
+    padding: 12px 14px; margin-bottom: 18px; line-height: 1.55; }
+  .pz-grid { display: grid; grid-template-columns: 1.15fr 1.35fr 92px 60px 60px 66px 26px; gap: 7px;
+    align-items: center; }
+  .pz-cols { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+    font-weight: 800; margin-bottom: 7px; }
+  .pz-row { margin-bottom: 8px; }
+  .pz-grid input { width: 100%; padding: 8px 9px; font-family: inherit; font-size: 13px; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 8px; outline: none; background: #fff; }
+  .pz-grid input:focus { border-color: var(--blue); }
+  .pz-grid input.bad { border-color: var(--coral); }
+  .pz-odds { font-size: 11px; color: var(--muted); text-align: center; line-height: 1.35; }
+  .pz-odds b { display: block; font-family: 'Bricolage Grotesque', sans-serif; font-size: 13px; color: var(--ink); }
+  .pz-del { background: none; border: none; padding: 4px; cursor: pointer; display: grid; place-items: center; }
+  .pz-del svg { width: 15px; height: 15px; color: var(--muted); }
+  .pz-del:hover svg { color: var(--coral); }
+  .pz-empty { color: var(--muted); font-size: 13.5px; padding: 10px 0; }
+  .pz-err { font-size: 12.5px; color: var(--coral); font-weight: 700; margin-top: 12px; }
+  .pz-foot { border-top: 1px solid var(--line); padding: 15px 24px; display: flex; align-items: center;
+    justify-content: space-between; gap: 12px; }
+  .pz-total { font-size: 12.5px; color: var(--muted); }
+  @media (max-width: 640px) {
+    .pz-grid { grid-template-columns: 1fr 1fr 60px 26px; }
+    .pz-grid .pz-wide { grid-column: span 2; }
+  }
+
+  /* ==========================================================================
+     Control Center - the review queue. Sits above the report because it is the
+     time-sensitive one: the report is what happened, this is what is about to.
+     ========================================================================== */
+  .cc {
+    --cc-navy: #00263D; --cc-ink: #24313D; --cc-muted: #5F6E7B;
+    --cc-coral: #B01657; --cc-coral-wash: #FBEAF1;
+    --cc-blue: #007DC9; --cc-blue-tint: #E5F2FB;
+    --cc-line: #E3E9EE; --cc-bg: #F4F8FB;
+    --cc-good: #2E9E6B; --cc-good-wash: #E3F5EC;
+    --cc-warn: #C9821A; --cc-warn-wash: #FBF0DC;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    color: var(--cc-ink);
+    display: block; margin-bottom: 34px;
+  }
+  .cc *, .cc *::before, .cc *::after { box-sizing: border-box; }
+  .cc h2, .cc h3 { font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; margin: 0; }
+
+  .cc-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+  .cc-head h2 { font-size: 21px; font-weight: 800; color: var(--cc-navy); }
+  .cc-head p { font-size: 13px; color: var(--cc-muted); margin: 4px 0 0; }
+
+  /* The deadline is the whole point of the screen, so it is stated, not implied. */
+  .cc-deadline { display: flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700;
+    background: var(--cc-warn-wash); border: 1px solid #EFD9AE; color: #7A5A12;
+    padding: 8px 13px; border-radius: 999px; }
+  .cc-deadline.sent { background: var(--cc-good-wash); border-color: #BFE6D2; color: var(--cc-good); }
+
+  .cc-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  @media (max-width: 640px) { .cc-stats { grid-template-columns: repeat(2, 1fr); } }
+  .cc-stat { background: #fff; border: 1px solid var(--cc-line); border-radius: 12px; padding: 12px 14px; }
+  .cc-stat .l { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cc-muted); }
+  .cc-stat .n { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 22px; margin-top: 4px; }
+  .cc-stat.spend .n { color: var(--cc-coral); }
+
+  .cc-hood { border: 1px solid var(--cc-line); border-radius: 14px; overflow: hidden; background: #fff; margin-bottom: 14px; }
+  .cc-hood.skipped { opacity: 0.6; }
+  .cc-hood-head { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 13px 16px; background: var(--cc-bg); border-bottom: 1px solid var(--cc-line); flex-wrap: wrap; }
+  .cc-hood-head h3 { font-size: 15.5px; font-weight: 700; color: var(--cc-navy); }
+  .cc-hood-head .m { font-size: 12px; color: var(--cc-muted); font-weight: 700; }
+
+  .cc-stop { display: flex; align-items: center; gap: 13px; padding: 13px 16px; border-top: 1px solid var(--cc-line); }
+  .cc-stop:first-of-type { border-top: none; }
+  .cc-stop.off { opacity: 0.5; }
+  .cc-stop .pin { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--cc-blue-tint); color: var(--cc-blue); font-weight: 800; font-size: 14px;
+    font-family: 'Bricolage Grotesque', sans-serif; }
+  .cc-stop.off .pin { background: var(--cc-bg); color: var(--cc-muted); }
+  .cc-stop .info { flex: 1; min-width: 0; }
+  .cc-stop .addr { font-weight: 800; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cc-stop .meta { font-size: 12px; color: var(--cc-muted); }
+  .cc-stop .cost { width: 62px; text-align: right; font-size: 13px; font-weight: 700; color: var(--cc-muted); flex: none; }
+
+  .cc-step { display: flex; align-items: center; flex: none; }
+  .cc-step button { width: 32px; height: 32px; border: 1px solid var(--cc-line); background: #fff;
+    color: var(--cc-ink); font-size: 17px; font-weight: 800; cursor: pointer; font-family: inherit; }
+  .cc-step button:first-child { border-radius: 8px 0 0 8px; }
+  .cc-step button:last-child { border-radius: 0 8px 8px 0; }
+  .cc-step button:disabled { opacity: 0.35; cursor: default; }
+  .cc-step .v { width: 46px; height: 32px; display: grid; place-items: center; background: #fff;
+    border-top: 1px solid var(--cc-line); border-bottom: 1px solid var(--cc-line);
+    font-weight: 800; font-size: 14px; font-family: 'Bricolage Grotesque', sans-serif; }
+
+  .cc-tgl { position: relative; width: 44px; height: 25px; flex: none; cursor: pointer; }
+  .cc-tgl input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .cc-tgl .tr { position: absolute; inset: 0; border-radius: 999px; background: #C9D3DC; transition: background .15s; }
+  .cc-tgl .tr::after { content: ''; position: absolute; top: 3px; left: 3px; width: 19px; height: 19px;
+    border-radius: 50%; background: #fff; transition: transform .15s; }
+  .cc-tgl input:checked + .tr { background: var(--cc-coral); }
+  .cc-tgl input:checked + .tr::after { transform: translateX(19px); }
+  .cc-tgl input:focus-visible + .tr { outline: 2px solid var(--cc-blue); outline-offset: 2px; }
+
+  .cc-bar { position: sticky; bottom: 0; background: rgba(255,255,255,0.96); backdrop-filter: blur(8px);
+    border: 1px solid var(--cc-line); border-radius: 14px; padding: 13px 16px; margin-top: 16px;
+    display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .cc-bar .tot { font-size: 13.5px; color: var(--cc-muted); font-weight: 700; }
+  .cc-bar .tot b { color: var(--cc-ink); font-size: 15.5px; }
+  .cc-btn { background: var(--cc-coral); color: #fff; border: none; cursor: pointer;
+    font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 15px;
+    padding: 11px 22px; border-radius: 999px; }
+  .cc-btn:hover:not(:disabled) { background: #8A1044; }
+  .cc-btn:disabled { background: #C9D3DC; cursor: default; }
+
+  .cc-empty { background: #fff; border: 1px solid var(--cc-line); border-radius: 14px;
+    padding: 34px 18px; text-align: center; color: var(--cc-muted); font-size: 14px; }
+  .cc-note { font-size: 12px; color: var(--cc-muted); margin-top: 10px; line-height: 1.55; }
+  .cc-toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--cc-navy); color: #fff; padding: 10px 18px; border-radius: 10px;
+    font-size: 13.5px; font-weight: 700; z-index: 60; }
+  .cc-cap { background: var(--cc-warn-wash); border: 1px solid #EFD9AE; color: #7A5A12;
+    border-radius: 10px; padding: 10px 13px; font-size: 12.5px; margin-bottom: 14px; line-height: 1.5; }
+  .cc-hidden { display: none !important; }
+
+  .cc-map-wrap { border: 1px solid var(--cc-line); border-radius: 14px; overflow: hidden;
+    background: #fff; margin-bottom: 14px; }
+  .cc-map-head { display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 11px 16px; background: var(--cc-bg); border-bottom: 1px solid var(--cc-line);
+    font-size: 11.5px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cc-muted); }
+  .cc-map-head .lg { display: flex; gap: 14px; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 700; }
+  .cc-map-head .lg i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+  .cc-map-head .on i { background: var(--cc-coral); }
+  .cc-map-head .off i { background: #C9D3DC; }
+  #cc-map { height: 300px; background: #EDF2F6; }
+  .cc-mpin { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    cursor: pointer; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 12.5px;
+    background: #C9D3DC; color: #5F6E7B; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,38,61,0.25); }
+  .cc-mpin.on { background: var(--cc-coral); color: #fff;
+    box-shadow: 0 0 0 5px rgba(176,22,87,0.18), 0 1px 4px rgba(0,38,61,0.3); }
+  .leaflet-tooltip.cc-tip { background: #00263D; color: #fff; border: none; font-weight: 700;
+    font-size: 12px; border-radius: 7px; }
+  .leaflet-tooltip.cc-tip::before { display: none; }
+</style>
+</head>
+<body>
+
+  <!-- Top bar with location switcher -->
+  <header class="bar">
+    <div class="bar-in">
+      <div class="bar-left">
+        <span class="brand-mark" aria-hidden="true"><img src="https://assets.cdn.filesafe.space/WzwhUvsDxq3KOUJqAjmJ/media/6a6c9b31a4c8a1a2c31f8c02.png" alt="Ripple" style="width:100%;height:100%;object-fit:contain;border-radius:inherit"/></span>
+        <span class="brand-name">Ripple</span>
+        <a class="switcher" href="/locations" title="Switch location" style="text-decoration:none">
+          <svg class="pin" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-5.686 7-11a7 7 0 1 0-14 0c0 5.314 7 11 7 11z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.4" fill="currentColor"/></svg>
+          <span id="loc-short">Loading...</span>
+          <svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+      <div class="bar-right">
+        <span class="avatar" id="avatar" title="">-</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="page-head">
+      <div>
+        <h1 id="page-title">Loading...</h1>
+        <p id="page-sub"></p>
+      </div>
+    </div>
+
+    <!-- Control Center: what is about to mail. Hidden entirely on a quiet day. -->
+    <section id="ripple-control-center" style="display:none"></section>
+
+    <!-- HERO: the Monday Report receipt -->
+    <section class="receipt-wrap" aria-label="Monday report">
+      <div class="receipt">
+        <div class="receipt-top">
+          <span class="receipt-title">Last 7 days</span>
+          <span class="receipt-date" id="m-range">-</span>
+        </div>
+
+        <div class="rline"><span class="lbl">Cards mailed</span><span class="val" id="m-mailed">-</span></div>
+        <div class="rline"><span class="lbl">Delivered</span><span class="val" id="m-delivered">-</span></div>
+        <div class="rline"><span class="lbl">Scratch cards played</span><span class="val" id="m-revealed">-</span></div>
+        <div class="rline"><span class="lbl">Appointments booked</span><span class="val" id="m-booked">-</span></div>
+        <div class="rline hot"><span class="lbl">New customers</span><span class="val" id="m-won">-</span></div>
+
+        <div class="rtotal">
+          <div class="big" id="m-revenue">-</div>
+          <div class="cap">revenue traced to Ripple (last 7 days)</div>
+        </div>
+
+        <div class="trace">Every customer traced to <b>the job that started it</b> <svg viewBox="0 0 24 24" fill="none" style="width:14px;height:14px;vertical-align:-2px;margin-left:2px"><path d="M12 21s7-5.686 7-11a7 7 0 1 0-14 0c0 5.314 7 11 7 11z" stroke="#B01657" stroke-width="1.8"/><circle cx="12" cy="10" r="2.2" fill="#B01657"/></svg></div>
+      </div>
+      <!-- torn edge -->
+      <svg class="tear" viewBox="0 0 560 14" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 0 L560 0 L560 6
+          L546 14 L532 6 L518 14 L504 6 L490 14 L476 6 L462 14 L448 6 L434 14 L420 6 L406 14 L392 6 L378 14 L364 6 L350 14 L336 6 L322 14 L308 6 L294 14 L280 6 L266 14 L252 6 L238 14 L224 6 L210 14 L196 6 L182 14 L168 6 L154 14 L140 6 L126 14 L112 6 L98 14 L84 6 L70 14 L56 6 L42 14 L28 6 L14 14 L0 6 Z"
+          fill="#FFFFFF"/>
+      </svg>
+    </section>
+
+    <!-- Supporting sections -->
+    <div class="grid">
+      <!-- Batches / campaigns -->
+      <section class="card">
+        <div class="card-head">
+          <h3>Active batches</h3>
+        </div>
+        <div id="batches-list">
+          <div class="empty-state" style="padding:20px 0;color:var(--muted);font-size:13.5px;text-align:center">Loading...</div>
+        </div>
+      </section>
+
+      <!-- Promo pool -->
+      <section class="card">
+        <div class="card-head">
+          <h3>Prize pool</h3>
+          <button class="linkbtn" id="prize-edit" hidden>Edit</button>
+        </div>
+        <div id="prizes-list">
+          <div class="empty-state" style="padding:20px 0;color:var(--muted);font-size:13.5px;text-align:center">Loading...</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+<!-- -- Control Center component -- -->
+<script>
+(function (global) {
+  'use strict';
+
+  var STEP = 5, MAX = 50;
+
+  // The queue is now filled from SCHEDULED appointments, not completions, so
+  // the owner is looking forward rather than back. Default view is the next
+  // day that actually has work on it - normally tomorrow, but the day after a
+  // quiet Sunday should not open on an empty screen.
+  var VIEWS = ['day', 'week', 'month'];
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  // Dates are handled as local calendar days throughout. service_date is a
+  // DATE column precisely so no timezone conversion happens between the
+  // appointment and the screen; new Date('2026-08-18') would parse as UTC
+  // midnight and render as the 17th west of Greenwich.
+  function ymd(d) {
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+  function fromYmd(s) {
+    var p = String(s || '').split('-');
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+  function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function startOfWeek(d) { var x = new Date(d); x.setDate(x.getDate() - x.getDay()); return x; }
+  function sameDay(a, b) { return ymd(a) === ymd(b); }
+
+  function mount(opts) {
+    var root = opts.mountEl;
+    var sb = opts.sb || null;
+    var locationId = opts.locationId || null;
+    var demo = !sb;
+    var hideWhenEmpty = !!opts.hideWhenEmpty;
+
+    var rows = [];            // send_queue rows in the loaded window
+    var undated = [];         // queued rows with no service_date (pre-0032)
+    var edits = {};           // batch_id -> { cards, on, dirty }
+    var priceCents = 150;
+    var lookupCents = 5;
+    var capInfo = null;
+
+    var view = 'day';
+    var anchor = addDays(new Date(), 1);   // tomorrow until the data says otherwise
+    var anchored = false;                  // have we jumped to the first real day yet
+    var loading = false;
+
+    function money(cents) {
+      return '$' + (cents / 100).toFixed(cents % 100 === 0 ? 0 : 2);
+    }
+
+    // A street costs the neighbour lookup AND the cards. Charging for one and
+    // showing the other is how a screen and an invoice end up disagreeing.
+    function stopCents(cards) {
+      return cards * (priceCents + lookupCents);
+    }
+
+    /** The day a row belongs to. Pre-0032 rows only have completed_at. */
+    function dayOf(r) {
+      if (r.service_date) return r.service_date;
+      if (r.completed_at) return ymd(new Date(r.completed_at));
+      return null;
+    }
+
+    /** Inclusive window the current view covers. */
+    function range() {
+      if (view === 'day') return { from: ymd(anchor), to: ymd(anchor) };
+      if (view === 'week') {
+        var s = startOfWeek(anchor);
+        return { from: ymd(s), to: ymd(addDays(s, 6)) };
+      }
+      var first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+      var last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+      return { from: ymd(first), to: ymd(last) };
+    }
+
+    function rangeLabel() {
+      var opt = { month: 'short', day: 'numeric' };
+      if (view === 'day') {
+        var t = new Date(), tm = addDays(t, 1);
+        if (sameDay(anchor, t)) return 'Today';
+        if (sameDay(anchor, tm)) return 'Tomorrow';
+        return anchor.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+      if (view === 'week') {
+        var s = startOfWeek(anchor);
+        return s.toLocaleDateString(undefined, opt) + ' - ' + addDays(s, 6).toLocaleDateString(undefined, opt);
+      }
+      return anchor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    }
+
+    function stateFor(r) {
+      if (!edits[r.batch_id]) {
+        var decided = r.approved_cards != null;
+        edits[r.batch_id] = {
+          cards: decided ? r.approved_cards : r.proposed_cards,
+          on: r.status === 'skipped' ? false : (decided ? r.approved_cards > 0 : true),
+          dirty: false
+        };
+      }
+      return edits[r.batch_id];
+    }
+
+    /** A batch that has gone to print is a record, not a decision. */
+    function locked(r) { return r.status === 'sending' || r.status === 'sent'; }
+
+    function deadlineText(list) {
+      if (!list.length) return '';
+      var withDeadline = list.filter(function (r) { return r.review_deadline && !locked(r); });
+      if (!withDeadline.length) {
+        return list.every(locked) ? 'Mailed' : '';
+      }
+      var d = new Date(withDeadline[0].review_deadline);
+      if (d.getTime() <= Date.now()) return 'Deadline passed - approved batches are on their way';
+      var hrs = Math.max(0, Math.round((d.getTime() - Date.now()) / 3600000));
+      var when = d.toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+      // Stated explicitly: with opt-out defaults, silence means these send.
+      return 'Sends automatically at ' + when + (hrs < 24 ? ' - in ' + hrs + 'h' : '');
+    }
+
+    function groupBy(list, keyFn) {
+      var by = {};
+      list.forEach(function (r) { var k = keyFn(r); (by[k] = by[k] || []).push(r); });
+      return by;
+    }
+
+    // ---- rendering -------------------------------------------------------
+
+    function head() {
+      var h = [];
+      h.push('<div class="cc-head"><div><h2>Mailing schedule</h2>' +
+        '<p>Every scheduled job, and the neighbours each one will reach. Cards mail the morning after the service date - adjust or skip any street before then.</p></div></div>');
+      h.push('<div class="cc-views"><div class="cc-seg">' +
+        VIEWS.map(function (v) {
+          return '<button data-view="' + v + '"' + (view === v ? ' class="on"' : '') + '>' +
+            (v === 'day' ? 'Day' : v === 'week' ? 'Week' : 'Month') + '</button>';
+        }).join('') +
+        '</div><div class="cc-nav">' +
+          '<button data-step="-1" aria-label="Previous">&#8249;</button>' +
+          '<span class="lbl">' + esc(rangeLabel()) + '</span>' +
+          '<button data-step="1" aria-label="Next">&#8250;</button>' +
+          '<button class="today" data-today>Tomorrow</button>' +
+        '</div></div>');
+      return h.join('');
+    }
+
+    function stopHtml(r, n) {
+      var st = stateFor(r);
+      var lock = locked(r);
+      var when = r.service_date
+        ? fromYmd(r.service_date).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+        : (r.completed_at ? new Date(r.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : 'No date');
+      var meta = lock
+        ? (r.status === 'sent' ? 'Mailed' : 'Going to print') + ' - ' + esc(when)
+        : 'Service ' + esc(when);
+      return '<div class="cc-stop' + (st.on && !lock ? '' : ' off') + '">' +
+        '<div class="pin">' + n + '</div>' +
+        '<div class="info"><div class="addr">' + esc(r.service_address || r.batch_id) + '</div>' +
+        '<div class="meta">' + meta + '</div></div>' +
+        '<div class="cc-step">' +
+          '<button data-dec="' + esc(r.batch_id) + '"' + (lock || !st.on || st.cards <= 0 ? ' disabled' : '') + ' aria-label="Fewer cards">&#8722;</button>' +
+          '<div class="v">' + (lock ? (r.approved_cards != null ? r.approved_cards : st.cards) : st.cards) + '</div>' +
+          '<button data-inc="' + esc(r.batch_id) + '"' + (lock || !st.on || st.cards >= MAX ? ' disabled' : '') + ' aria-label="More cards">+</button>' +
+        '</div>' +
+        '<div class="cost">' + (lock ? 'sent' : (st.on ? money(stopCents(st.cards)) : '-')) + '</div>' +
+        '<label class="cc-tgl"><input type="checkbox" data-stop="' + esc(r.batch_id) + '"' +
+        (st.on && !lock ? ' checked' : '') + (lock ? ' disabled' : '') + '><span class="tr"></span></label></div>';
+    }
+
+    /** Day view: grouped by neighbourhood, as before. */
+    function renderDay(html, list, counter) {
+      var by = groupBy(list, function (r) { return r.neighborhood || 'Unsorted'; });
+      Object.keys(by).forEach(function (hood) {
+        var stops = by[hood];
+        var onCount = stops.filter(function (r) { return stateFor(r).on && !locked(r); }).length;
+        html.push('<div class="cc-hood' + (onCount ? '' : ' skipped') + '">');
+        html.push('<div class="cc-hood-head"><div><h3>' + esc(hood) + '</h3>' +
+          '<div class="m">' + stops.length + ' stop' + (stops.length > 1 ? 's' : '') +
+          ' - ' + onCount + ' mailing</div></div>' +
+          '<label class="cc-tgl"><input type="checkbox" data-hood="' + esc(hood) + '"' +
+          (onCount ? ' checked' : '') + '><span class="tr"></span></label></div>');
+        stops.forEach(function (r) { html.push(stopHtml(r, counter())); });
+        html.push('</div>');
+      });
+    }
+
+    /** Week view: one section per day, so a whole week can be set in one pass. */
+    function renderWeek(html, list, counter) {
+      var start = startOfWeek(anchor);
+      var by = groupBy(list, dayOf);
+      var today = ymd(new Date());
+      for (var i = 0; i < 7; i++) {
+        var d = addDays(start, i), key = ymd(d);
+        var stops = by[key] || [];
+        if (!stops.length) continue;
+        var onCount = stops.filter(function (r) { return stateFor(r).on && !locked(r); }).length;
+        var cards = stops.reduce(function (n, r) { var st = stateFor(r); return n + (st.on && !locked(r) ? st.cards : 0); }, 0);
+        html.push('<div class="cc-day' + (key < today ? ' past' : '') + '">');
+        html.push('<div class="cc-day-head"><h3>' +
+          esc(d.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })) +
+          '</h3><span class="m">' + onCount + ' of ' + stops.length + ' streets - ' + cards + ' cards</span></div>');
+        stops.forEach(function (r) { html.push(stopHtml(r, counter())); });
+        html.push('</div>');
+      }
+    }
+
+    /** Month view: a calendar to see load at a glance; click a day to set it. */
+    function renderMonth(html, list) {
+      var by = groupBy(list, dayOf);
+      var first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+      var daysIn = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0).getDate();
+      var today = ymd(new Date());
+
+      html.push('<div class="cc-cal">');
+      ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(function (d) {
+        html.push('<div class="dow">' + d + '</div>');
+      });
+      for (var b = 0; b < first.getDay(); b++) html.push('<div class="cc-cell blank"></div>');
+
+      for (var day = 1; day <= daysIn; day++) {
+        var d = new Date(anchor.getFullYear(), anchor.getMonth(), day);
+        var key = ymd(d);
+        var stops = by[key] || [];
+        var cards = stops.reduce(function (n, r) { var st = stateFor(r); return n + (st.on && !locked(r) ? st.cards : 0); }, 0);
+        var allSent = stops.length > 0 && stops.every(locked);
+        var cls = 'cc-cell' + (stops.length ? '' : ' empty') + (key === today ? ' today' : '') + (allSent ? ' sent' : '');
+        html.push('<button class="' + cls + '" data-day="' + key + '"' + (stops.length ? '' : ' disabled') + '>' +
+          '<span class="d">' + day + '</span>' +
+          (stops.length
+            ? '<span class="c">' + stops.length + ' street' + (stops.length > 1 ? 's' : '') + '<br>' + cards + ' cards</span>' +
+              '<span class="bars">' + stops.slice(0, 6).map(function (r) {
+                return '<i class="' + (locked(r) ? '' : (stateFor(r).on ? 'on' : 'off')) + '"></i>';
+              }).join('') + '</span>'
+            : '') +
+          '</button>');
+      }
+      html.push('</div>');
+      html.push('<p class="cc-note">Tap any day to open it and set the streets on it.</p>');
+    }
+
+    function render() {
+      var list = rows.slice();
+      var all = list.concat(undated);
+
+      if (!all.length && hideWhenEmpty && view === 'day' && !anchored) {
+        root.innerHTML = ''; root.style.display = 'none'; return;
+      }
+
+      var html = ['<div class="cc">'];
+      html.push(head());
+
+      if (capInfo) html.push('<div class="cc-cap">' + esc(capInfo) + '</div>');
+
+      if (!all.length) {
+        html.push('<div class="cc-empty">Nothing scheduled ' +
+          (view === 'day' ? 'on this day' : view === 'week' ? 'this week' : 'this month') +
+          '. Streets appear here as soon as an appointment is booked in HighLevel.</div>');
+        html.push('</div>');
+        root.style.display = '';
+        root.innerHTML = html.join('');
+        wire();
+        return;
+      }
+
+      var n = 0;
+      var counter = function () { return ++n; };
+      var statsSlot = html.push('') - 1;
+
+      if (view === 'month') {
+        renderMonth(html, list);
+      } else {
+        if (view === 'day') {
+          html.push('<div class="cc-deadline' + (list.every(locked) ? ' sent' : '') + '">' +
+            esc(deadlineText(list)) + '</div>');
+          // Only offered when the jobs have been geocoded; a map with no pins
+          // is worse than no map. Day view only - a month of pins is noise.
+          if (list.some(function (r) { return r.lat && r.lng; })) {
+            html.push('<div class="cc-map-wrap"><div class="cc-map-head">' +
+              '<span>This day\u2019s route - tap a pin to skip or restore</span>' +
+              '<span class="lg"><span class="on"><i></i>Mailing</span><span class="off"><i></i>Skipped</span></span>' +
+              '</div><div id="cc-map"></div></div>');
+          }
+          renderDay(html, list, counter);
+        } else {
+          renderWeek(html, list, counter);
+        }
+
+        // Rows with no service date cannot be scheduled into any view, but
+        // they are still queued and will still mail. Surfacing them beats
+        // leaving them invisible.
+        if (undated.length) {
+          html.push('<div class="cc-hood"><div class="cc-hood-head"><div><h3>No service date</h3>' +
+            '<div class="m">' + undated.length + ' queued before scheduling was switched on</div></div></div>');
+          undated.forEach(function (r) { html.push(stopHtml(r, counter())); });
+          html.push('</div>');
+        }
+      }
+
+      var totalCards = 0, totalStops = 0;
+      all.forEach(function (r) {
+        var st = stateFor(r);
+        if (st.on && !locked(r)) { totalStops++; totalCards += st.cards; }
+      });
+
+      html[statsSlot] =
+        '<div class="cc-stats">' +
+        '<div class="cc-stat"><div class="l">Streets mailing</div><div class="n">' + totalStops + '</div></div>' +
+        '<div class="cc-stat"><div class="l">Cards</div><div class="n">' + totalCards + '</div></div>' +
+        '<div class="cc-stat spend"><div class="l">Total spend</div><div class="n">' + money(stopCents(totalCards)) + '</div>' +
+          '<div class="l" style="text-transform:none;letter-spacing:0;font-weight:600;margin-top:3px">' +
+          money(totalCards * priceCents) + ' cards + ' + money(totalCards * lookupCents) + ' lookups</div></div>' +
+        '<div class="cc-stat"><div class="l">Skipped</div><div class="n">' + (all.length - totalStops) + '</div></div>' +
+        '</div>';
+
+      if (view !== 'month') {
+        html.push('<div class="cc-bar"><div class="tot"><b>' + totalCards + ' cards</b> - ' +
+          totalStops + ' streets - ' + money(stopCents(totalCards)) + '</div>' +
+          '<button class="cc-btn" data-save>Save changes</button></div>');
+        html.push('<p class="cc-note">Each street costs ' + money(lookupCents) + ' per neighbour address we look up, plus ' +
+          money(priceCents) + ' per card mailed. Skipped streets cost nothing. ' +
+          'The figure above is an estimate - you are billed for what actually sends, so addresses we suppress ' +
+          '(existing customers, opt-outs) come off the total.</p>');
+      }
+      html.push('</div>');
+
+      root.style.display = '';
+      root.innerHTML = html.join('');
+      wire();
+      if (view === 'day') drawMap();
+    }
+
+    function wire() {
+      root.querySelectorAll('[data-view]').forEach(function (b) {
+        b.onclick = function () {
+          if (view === b.dataset.view) return;
+          view = b.dataset.view;
+          load();
+        };
+      });
+      root.querySelectorAll('[data-step]').forEach(function (b) {
+        b.onclick = function () {
+          var n = Number(b.dataset.step);
+          if (view === 'day') anchor = addDays(anchor, n);
+          else if (view === 'week') anchor = addDays(anchor, 7 * n);
+          else anchor = new Date(anchor.getFullYear(), anchor.getMonth() + n, 1);
+          load();
+        };
+      });
+      var t = root.querySelector('[data-today]');
+      if (t) t.onclick = function () { anchor = addDays(new Date(), 1); load(); };
+
+      root.querySelectorAll('[data-day]').forEach(function (b) {
+        b.onclick = function () { anchor = fromYmd(b.dataset.day); view = 'day'; load(); };
+      });
+
+      root.querySelectorAll('[data-inc]').forEach(function (b) {
+        b.onclick = function () {
+          var st = edits[b.dataset.inc];
+          st.cards = Math.min(MAX, st.cards + STEP); st.dirty = true; render();
+        };
+      });
+      root.querySelectorAll('[data-dec]').forEach(function (b) {
+        b.onclick = function () {
+          var st = edits[b.dataset.dec];
+          st.cards = Math.max(0, st.cards - STEP); st.dirty = true; render();
+        };
+      });
+      root.querySelectorAll('[data-stop]').forEach(function (c) {
+        c.onchange = function () {
+          var st = edits[c.dataset.stop];
+          st.on = c.checked; st.dirty = true; render();
+        };
+      });
+      root.querySelectorAll('[data-hood]').forEach(function (c) {
+        c.onchange = function () {
+          var hood = c.dataset.hood;
+          rows.filter(function (r) { return (r.neighborhood || 'Unsorted') === hood && !locked(r); })
+              .forEach(function (r) { var st = stateFor(r); st.on = c.checked; st.dirty = true; });
+          render();
+        };
+      });
+      var save = root.querySelector('[data-save]');
+      if (save) save.onclick = saveAll;
+    }
+
+    var map = null, markers = {};
+
+    function pinIcon(n, on) {
+      return L.divIcon({ className: '',
+        html: '<div class="cc-mpin' + (on ? ' on' : '') + '">' + n + '</div>',
+        iconSize: [28, 28], iconAnchor: [14, 14] });
+    }
+
+    function drawMap() {
+      var el = document.getElementById('cc-map');
+      if (!el || typeof L === 'undefined') return;
+
+      var pts = [];
+      var i = 0;
+      var by = groupBy(rows, function (r) { return r.neighborhood || 'Unsorted'; });
+      Object.keys(by).forEach(function (hood) {
+        by[hood].forEach(function (r) {
+          i++;
+          if (!r.lat || !r.lng) return;
+          pts.push({ n: i, r: r });
+        });
+      });
+      if (!pts.length) return;
+
+      if (map) { map.remove(); map = null; }
+      map = L.map(el, { scrollWheelZoom: false, zoomControl: true });
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap, &copy; CARTO', maxZoom: 19
+      }).addTo(map);
+
+      markers = {};
+      var bounds = [];
+      pts.forEach(function (p) {
+        var st = stateFor(p.r);
+        var m = L.marker([p.r.lat, p.r.lng], { icon: pinIcon(p.n, st.on && !locked(p.r)) }).addTo(map);
+        m.bindTooltip(p.r.service_address || p.r.batch_id, { className: 'cc-tip', direction: 'top' });
+        if (!locked(p.r)) {
+          m.on('click', function () {
+            var s = stateFor(p.r); s.on = !s.on; s.dirty = true; render();
+          });
+        }
+        markers[p.r.batch_id] = m;
+        bounds.push([p.r.lat, p.r.lng]);
+      });
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 15 });
+    }
+
+    function toast(msg) {
+      var t = document.createElement('div');
+      t.className = 'cc-toast'; t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(function () { t.remove(); }, 3200);
+    }
+
+    async function saveAll() {
+      var btn = root.querySelector('[data-save]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving...'; }
+
+      var all = rows.concat(undated);
+      var changed = all.filter(function (r) { return edits[r.batch_id] && edits[r.batch_id].dirty; });
+      if (!changed.length) {
+        toast('Nothing to save.');
+        if (btn) { btn.disabled = false; btn.textContent = 'Save changes'; }
+        return;
+      }
+
+      try {
+        for (var i = 0; i < changed.length; i++) {
+          var r = changed[i];
+          var st = edits[r.batch_id];
+          if (demo) { r.approved_cards = st.on ? st.cards : 0; r.status = st.on ? 'approved' : 'skipped'; st.dirty = false; continue; }
+          var res = await sb.rpc('decide_send', { p_batch_id: r.batch_id, p_cards: st.on ? st.cards : 0 });
+          if (res.error) throw new Error(res.error.message);
+          st.dirty = false;
+        }
+        toast('Saved. ' + changed.length + ' street' + (changed.length > 1 ? 's' : '') + ' updated.');
+        if (!demo) await load(); else render();
+      } catch (e) {
+        toast('Could not save: ' + e.message);
+        if (btn) { btn.disabled = false; btn.textContent = 'Save changes'; }
+      }
+    }
+
+    var COLS = 'batch_id, location_id, neighborhood, service_address, service_date, completed_at, ' +
+               'proposed_cards, approved_cards, status, review_deadline, lat, lng';
+
+    async function load() {
+      if (loading) return;
+      loading = true;
+      if (demo) { rows = demoRows(); undated = []; loading = false; anchored = true; render(); return; }
+      try {
+        var win = range();
+        var q = sb.from('send_queue').select(COLS)
+          .gte('service_date', win.from)
+          .lte('service_date', win.to)
+          .order('service_date', { ascending: true })
+          .order('neighborhood', { ascending: true });
+        if (locationId) q = q.eq('location_id', locationId);
+        var r = await q;
+        if (r.error) throw new Error(r.error.message);
+        rows = r.data || [];
+
+        // Anything queued before scheduling existed. Shown once, in day and
+        // week views, so it cannot silently mail off-screen.
+        var u = sb.from('send_queue').select(COLS)
+          .is('service_date', null)
+          .in('status', ['pending', 'approved']);
+        if (locationId) u = u.eq('location_id', locationId);
+        var ur = await u;
+        undated = (ur && ur.data) || [];
+
+        edits = {};
+
+        // First paint: if the default day is empty, jump to the next day that
+        // has work rather than opening on nothing.
+        if (!anchored && view === 'day' && !rows.length) {
+          anchored = true;
+          var nxt = sb.from('send_queue').select('service_date')
+            .gte('service_date', ymd(new Date()))
+            .in('status', ['pending', 'approved'])
+            .order('service_date', { ascending: true })
+            .limit(1);
+          if (locationId) nxt = nxt.eq('location_id', locationId);
+          var nr = await nxt;
+          var found = nr && nr.data && nr.data[0] && nr.data[0].service_date;
+          if (found) { loading = false; anchor = fromYmd(found); return load(); }
+        }
+        anchored = true;
+
+        // Price per card, if the billing migrations have been run.
+        try {
+          var rate = await sb.rpc('billing_rates', { p_location_id: locationId || (rows[0] && rows[0].location_id) });
+          var row = rate && rate.data && (Array.isArray(rate.data) ? rate.data[0] : rate.data);
+          if (row && row.price_per_card_cents) priceCents = row.price_per_card_cents;
+          if (row && row.price_per_lookup_cents) lookupCents = row.price_per_lookup_cents;
+        } catch (_) { /* pricing not configured yet; the default stands */ }
+
+        render();
+      } catch (e) {
+        // A broken queue must not take the rest of the dashboard down with it.
+        root.style.display = '';
+        root.innerHTML = '<div class="cc"><div class="cc-empty">Could not load your schedule: ' + esc(e.message) + '</div></div>';
+      } finally {
+        loading = false;
+      }
+    }
+
+    function demoRows() {
+      var mk = function (b, hood, addr, offset, cards, lat, lng) {
+        var d = addDays(new Date(), offset);
+        var dl = addDays(d, 1); dl.setHours(10, 0, 0, 0);
+        return { batch_id: b, neighborhood: hood, service_address: addr,
+                 service_date: ymd(d), completed_at: null,
+                 proposed_cards: cards, approved_cards: null, status: 'pending',
+                 review_deadline: dl.toISOString(), lat: lat, lng: lng };
+      };
+      var win = range();
+      return [
+        mk('B1', 'Myers Park', '2214 Beverly Dr', 1, 20, 35.1935, -80.8265),
+        mk('B2', 'Myers Park', '1830 Queens Rd W', 1, 20, 35.1892, -80.8391),
+        mk('B3', 'Dilworth', '715 E Worthington Ave', 2, 20, 35.2085, -80.8532),
+        mk('B4', 'Dilworth', '1408 Lennox Ave', 3, 20, 35.2043, -80.8480),
+        mk('B5', 'Plaza Midwood', '2109 Kensington Dr', 4, 20, 35.2199, -80.8065),
+        mk('B6', 'Ballantyne', '11524 Ardrey Kell Rd', 9, 30, 35.0532, -80.8140)
+      ].filter(function (r) { return r.service_date >= win.from && r.service_date <= win.to; });
+    }
+
+    load();
+    return { reload: load };
+  }
+
+  global.RippleControlCenter = { mount: mount };
+})(window);
+</script>
+
+<!-- -- Ripple dashboard guard: session + ?loc resolution on load -- -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://dhizayohljxioxxzkhty.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoaXpheW9obGp4aW94eHpraHR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4ODMyODEsImV4cCI6MjEwMDQ1OTI4MX0.MmcWiXK7hxPaMuWGPZLiA-vowFs3dJi6OqkOHKDCnUY";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey: 'ripple-auth',
+      storage: window.localStorage,
+      detectSessionInUrl: true
+    }
+  });
+
+  async function waitForSession(tries = 5) {
+    for (let i = 0; i < tries; i++) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) return session;
+      await new Promise(r => setTimeout(r, 250));
+    }
+    return null;
+  }
+
+  (async () => {
+    // 1. Guard: must be signed in.
+    const session = await waitForSession();
+    if (!session) { window.location.replace("/login"); return; }
+    const user = session.user;
+
+    // 2. Which location? Comes from the switcher as ?loc=<slug>.
+    const slug = new URLSearchParams(window.location.search).get("loc");
+    if (!slug) { window.location.replace("/locations"); return; }
+
+    // 3. Load the tenant.
+    //    NOTE: this does NOT enforce tenancy. public.tenants is a view with
+    //    security_invoker off and no filter, so it returns any location_id
+    //    that is asked for. Changing ?loc= in the URL reads another client's
+    //    row. Tracked as a fix on the view; do not rely on this call to scope.
+    const { data: tenant, error } = await sb
+      .from("tenants")
+      .select("id, name, slug, prize_weights, paused, address_backfill_completed_at")
+      .eq("slug", slug)
+      .single();
+
+    if (error || !tenant) { window.location.replace("/locations"); return; }
+
+    // 4. Paint the header.
+    const shortName = tenant.name.split("-").pop().trim();
+    document.getElementById("loc-short").textContent = shortName;
+    document.getElementById("page-title").textContent = shortName;
+    // Was the franchise name repeated directly under itself. The owner cannot
+    // see the send gate anywhere else, and it is the thing most likely to
+    // explain an empty schedule.
+    document.getElementById("page-sub").textContent = tenant.paused
+      ? "Mailing is paused for this location"
+      : (tenant.address_backfill_completed_at
+          ? "Neighbour mailing is active"
+          : "Setup incomplete - no cards will send until the customer address sync has run");
+
+    const av = document.getElementById("avatar");
+    av.textContent = (user.email || "?")[0].toUpperCase();
+    av.title = user.email || "";
+
+    // 4b. Control Center - what is about to mail. Mounted before the report
+    //     loads so a time-sensitive decision is not waiting on a slow RPC.
+    //     RLS scopes send_queue, so an owner only ever sees their own route.
+    try {
+      RippleControlCenter.mount({
+        mountEl: document.getElementById("ripple-control-center"),
+        sb,
+        locationId: tenant.slug,
+        hideWhenEmpty: true
+      });
+    } catch (e) {
+      console.error("control center failed to mount", e);
+    }
+
+    // 5. Load the funnel for the last 7 days via the funnel_summary RPC.
+    //    RLS scopes it to this location automatically.
+    const fmt = (n) => (n ?? 0).toLocaleString();
+    const money = (n) => "+$" + Math.round(n ?? 0).toLocaleString();
+    try {
+      const { data: f, error: fErr } = await sb
+        .rpc("funnel_summary", { p_location_id: tenant.slug, p_days: 7 });
+      const row = Array.isArray(f) ? f[0] : f;
+      if (!fErr && row) {
+        document.getElementById("m-mailed").textContent    = fmt(row.mailed);
+        document.getElementById("m-delivered").textContent = fmt(row.delivered);
+        document.getElementById("m-revealed").textContent  = fmt(row.revealed);
+        document.getElementById("m-booked").textContent    = fmt(row.booked);
+        document.getElementById("m-won").textContent       = fmt(row.won);
+        document.getElementById("m-revenue").textContent   = money(row.revenue);
+      }
+    } catch (e) {
+      // Leave the dashes in place if the funnel can't load; don't break the page.
+      console.error("funnel_summary failed", e);
+    }
+
+    // Date range label for the last-7-days window.
+    const today = new Date();
+    const weekAgo = new Date(today.getTime() - 6 * 86400000);
+    const opts = { month: "short", day: "numeric" };
+    document.getElementById("m-range").textContent =
+      `${weekAgo.toLocaleDateString(undefined, opts)} - ${today.toLocaleDateString(undefined, opts)}`;
+
+    // 6. Active batches - real jobs for this location, or an empty state.
+    try {
+      const { data: batches } = await sb
+        .rpc("batches_summary", { p_location_id: tenant.slug, p_limit: 10 });
+      const el = document.getElementById("batches-list");
+      if (!batches || batches.length === 0) {
+        el.innerHTML = `<div class="empty-state" style="padding:20px 0;color:var(--muted);font-size:13.5px;text-align:center">No batches yet. When a job is marked "Service Completed" in HighLevel, its neighbourhood batch shows up here.</div>`;
+      } else {
+        const dotClass = (s) => s === "live" ? "d-live" : (s === "queued" ? "d-queued" : "d-done");
+        const when = (d) => new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        el.innerHTML = batches.map((b) => `
+          <div class="batch">
+            <span class="batch-dot ${dotClass(b.status)}"></span>
+            <span class="batch-body">
+              <span class="batch-name">${(b.service_address || "Batch").replace(/</g, "&lt;")}</span>
+              <span class="batch-meta">Mailed ${when(b.created_at)} - ${b.scanned_count} scanned - ${b.claimed_count} claimed</span>
+            </span>
+            <span class="batch-count">${b.mailed_count}</span>
+          </div>`).join("");
+      }
+    } catch (e) {
+      const el = document.getElementById("batches-list");
+      el.innerHTML = `<div class="empty-state" style="padding:20px 0;color:var(--muted);font-size:13.5px;text-align:center">Couldn't load batches.</div>`;
+    }
+
+    // 7. Prize pool - painted from config.prize_weights, and editable in place.
+    //
+    //    The write goes through set_prize_weights(), a security-definer RPC.
+    //    It has to: config carries only a SELECT policy, so the browser cannot
+    //    update the column directly, and admin-operations.setPrizeWeights is
+    //    behind is_super_admin - a franchise owner would get a 403 from it.
+    let weights = Array.isArray(tenant.prize_weights) ? tenant.prize_weights : [];
+    const PRIZE_COLORS = ["var(--blue)", "var(--kraft)", "var(--coral)", "var(--navy)"];
+    const esc = (v) => String(v == null ? "" : v).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+    function paintPrizePool() {
+      const el = document.getElementById("prizes-list");
+      if (!weights.length) {
+        el.innerHTML = '<div class="empty-state" style="padding:20px 0;color:var(--muted);font-size:13.5px;text-align:center">No prizes set yet. Add scratch-card prizes to start rewarding neighbours who book.</div>';
+        return;
+      }
+      const total = weights.reduce((s, w) => s + (Number(w.w) || 0), 0) || 1;
+      el.innerHTML = weights.map((w, i) => {
+        const pct = Math.round(((Number(w.w) || 0) / total) * 100);
+        const cap = (w.cap != null) ? ("Cap " + w.cap) : "No cap";
+        return '<div class="promo">' +
+          '<div class="promo-top"><span class="promo-name">' + esc(w.label || ("Prize " + (i + 1))) + '</span>' +
+          '<span class="promo-odds">' + pct + '%</span></div>' +
+          '<div class="promo-bar"><span style="width:' + pct + '%;background:' + PRIZE_COLORS[i % PRIZE_COLORS.length] + '"></span></div>' +
+          '<div class="cap-note">' + cap + '</div></div>';
+      }).join("");
+    }
+
+    try { paintPrizePool(); }
+    catch (e) {
+      document.getElementById("prizes-list").innerHTML =
+        '<div class="empty-state" style="padding:20px 0;color:var(--muted);font-size:13.5px;text-align:center">Could not load prizes.</div>';
+    }
+
+    // Only show Edit to someone who can actually save. A button that always
+    // fails is worse than no button.
+    (async () => {
+      let may = false;
+      try { const r = await sb.rpc("is_super_admin"); may = r.data === true; } catch (e) { /* not fatal */ }
+      if (!may) {
+        try {
+          const r = await sb.from("tenant_users").select("role")
+            .eq("location_id", tenant.slug).eq("user_id", user.id);
+          may = (r.data || []).some((m) => m.role === "owner" || m.role === "admin");
+        } catch (e) { /* not fatal */ }
+      }
+      if (may) document.getElementById("prize-edit").hidden = false;
+    })();
+
+    document.getElementById("prize-edit").onclick = openPrizeEditor;
+
+    function openPrizeEditor() {
+      // idx is the prize's identity for the life of the client: prize_visits
+      // rows already point at it and caps are counted by it. Existing prizes
+      // keep the idx they were saved with; only new ones get a fresh number.
+      let draft = weights.map((w, i) => ({
+        idx: typeof w.idx === "number" ? w.idx : i,
+        label: w.label || ("Prize " + (i + 1)),
+        sub: w.sub || "",
+        code_prefix: w.code_prefix || "",
+        w: typeof w.w === "number" ? w.w : 1,
+        cap: (w.cap === null || w.cap === undefined || w.cap === "") ? "" : Number(w.cap),
+      }));
+
+      const xIcon = '<svg viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+      const mount = document.createElement("div");
+      mount.className = "pz-scrim";
+      mount.innerHTML =
+        '<div class="pz-modal" role="dialog" aria-label="Edit prize pool">' +
+          '<div class="pz-head"><div><h3>Prize pool</h3><p>What a neighbour can win when they scratch the card.</p></div>' +
+            '<button class="pz-x" data-pz-close aria-label="Close">' + xIcon + '</button></div>' +
+          '<div class="pz-body">' +
+            '<div class="pz-note">The prize is rolled when a neighbour scans, and only counts against its <strong>cap</strong> when they book. Someone who scratches and wanders off does not use up your best offer. Odds are the weight divided by the total, so weights are relative - they do not need to add up to 100.</div>' +
+            '<div class="pz-grid pz-cols"><span class="pz-wide">Prize</span><span class="pz-wide">Description</span><span>Code</span><span>Weight</span><span>Cap</span><span style="text-align:center">Odds</span><span></span></div>' +
+            '<div id="pz-rows"></div>' +
+            '<button class="btn ghost sm" id="pz-add" style="margin-top:8px">Add a prize</button>' +
+            '<div class="pz-err" id="pz-err" hidden></div>' +
+          '</div>' +
+          '<div class="pz-foot"><span class="pz-total" id="pz-total"></span>' +
+            '<span style="display:flex;gap:10px"><button class="btn ghost sm" data-pz-close>Cancel</button>' +
+            '<button class="btn sm" id="pz-save">Save prizes</button></span></div>' +
+        '</div>';
+      document.body.appendChild(mount);
+
+      const $ = (i) => document.getElementById(i);
+      const close = () => { document.removeEventListener("keydown", onKey); mount.remove(); };
+      const onKey = (e) => { if (e.key === "Escape") close(); };
+      document.addEventListener("keydown", onKey);
+      mount.addEventListener("click", (e) => {
+        if (e.target === mount || e.target.closest("[data-pz-close]")) close();
+      });
+
+      function paintRows() {
+        const total = draft.reduce((s, x) => s + (Number(x.w) || 0), 0) || 1;
+        $("pz-rows").innerHTML = draft.length ? draft.map((w, i) =>
+          '<div class="pz-grid pz-row">' +
+            '<input class="pz-wide" data-f="label" data-i="' + i + '" value="' + esc(w.label) + '" placeholder="First treatment FREE">' +
+            '<input class="pz-wide" data-f="sub" data-i="' + i + '" value="' + esc(w.sub) + '" placeholder="Your first barrier spray, on us.">' +
+            '<input data-f="code_prefix" data-i="' + i + '" value="' + esc(w.code_prefix) + '" placeholder="FREESPRAY" style="text-transform:uppercase;font-size:12px">' +
+            '<input data-f="w" data-i="' + i + '" type="number" min="0" value="' + w.w + '">' +
+            '<input data-f="cap" data-i="' + i + '" type="number" min="1" value="' + w.cap + '" placeholder="none">' +
+            '<span class="pz-odds"><b>' + ((Number(w.w) || 0) / total * 100).toFixed(0) + '%</b>' +
+              (w.cap === "" ? "no cap" : "max " + w.cap) + '</span>' +
+            '<button class="pz-del" data-del="' + i + '" title="Remove this prize">' + xIcon + '</button>' +
+          '</div>').join("") : '<div class="pz-empty">No prizes yet. Add one below - until then the scratch card has nothing to reveal.</div>';
+
+        $("pz-total").textContent = draft.length ? ("Total weight: " + total) : "";
+
+        $("pz-rows").querySelectorAll("[data-f]").forEach((el) => {
+          el.oninput = () => {
+            const i = +el.dataset.i, f = el.dataset.f;
+            if (f === "w") { draft[i].w = Number(el.value); paintRows(); }
+            else if (f === "cap") { draft[i].cap = el.value === "" ? "" : Number(el.value); paintRows(); }
+            else if (f === "code_prefix") {
+              draft[i].code_prefix = el.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+              el.value = draft[i].code_prefix;
+            } else { draft[i][f] = el.value; }
+          };
+        });
+        $("pz-rows").querySelectorAll("[data-del]").forEach((el) => {
+          el.onclick = () => {
+            const i = +el.dataset.del;
+            // Codes already issued for this prize stay valid; they just lose
+            // their description. Nothing is renumbered, because idx is kept.
+            if (!confirm("Remove \"" + draft[i].label + "\"? Neighbours who already claimed it keep their code, but it will no longer show here.")) return;
+            draft.splice(i, 1); paintRows();
+          };
+        });
+      }
+
+      $("pz-add").onclick = () => {
+        const nextIdx = draft.length ? Math.max.apply(null, draft.map((w) => w.idx)) + 1 : 0;
+        draft.push({ idx: nextIdx, label: "New prize", sub: "", code_prefix: "", w: 10, cap: "" });
+        paintRows();
+      };
+
+      $("pz-save").onclick = async () => {
+        const err = $("pz-err");
+        err.hidden = true;
+        const fail = (m) => { err.textContent = m; err.hidden = false; };
+
+        const clean = draft.map((w) => ({
+          idx: w.idx,
+          label: (w.label || "").trim(),
+          sub: (w.sub || "").trim(),
+          code_prefix: (w.code_prefix || "").trim().toUpperCase(),
+          w: Number(w.w) || 0,
+          cap: w.cap === "" ? null : Number(w.cap),
+        }));
+
+        if (clean.some((p) => !p.label)) return fail("Every prize needs a name.");
+        if (clean.some((p) => p.cap !== null && (!Number.isInteger(p.cap) || p.cap < 1)))
+          return fail("A cap must be a whole number of 1 or more, or blank for no cap.");
+        if (clean.length && clean.reduce((s, p) => s + p.w, 0) <= 0)
+          return fail("At least one prize needs a weight above zero, or nothing can be won.");
+        if (clean.some((p) => p.w > 0 && !p.code_prefix))
+          return fail("Every prize needs a code, like FREESPRAY - it becomes the promo code a neighbour is given.");
+
+        const btn = $("pz-save");
+        btn.disabled = true; btn.textContent = "Saving...";
+        try {
+          const r = await sb.rpc("set_prize_weights", { p_location_id: tenant.slug, p_weights: clean });
+          if (r.error) throw r.error;
+          weights = clean;
+          paintPrizePool();
+          close();
+        } catch (e) {
+          const msg = String((e && e.message) || e);
+          btn.disabled = false; btn.textContent = "Save prizes";
+          if (e && (e.code === "PGRST202" || /could not find the function/i.test(msg)))
+            fail("Prize saving is not switched on for this project yet - migration 0028 (set_prize_weights) has not been applied.");
+          else if (e && (e.code === "42501" || /not authorised/i.test(msg)))
+            fail("Your account cannot change prizes for this location.");
+          else fail("Could not save: " + msg);
+        }
+      };
+
+      paintRows();
+      const first = $("pz-rows").querySelector("input");
+      if (first) first.focus();
+    }
+  })();
+</script>
+</body>
+</html>

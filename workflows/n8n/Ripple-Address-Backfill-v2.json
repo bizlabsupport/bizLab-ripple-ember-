@@ -1,0 +1,248 @@
+{
+  "name": "Ripple - Address Backfill",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            { "name": "locationId" },
+            { "name": "dryRun" }
+          ]
+        }
+      },
+      "id": "fa8f5655-9bfa-4e35-a504-bf85c1ca621a",
+      "name": "When Called",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [-1328, 192]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Read the location's decrypted access token. Also confirm the install is\n-- active; a revoked client should never be backfilled.\nselect read_oauth_secret(access_token_secret_id) as access_token,\n       status\n  from oauth_tokens\n where provider='highlevel' and location_id=$1\n limit 1;",
+        "options": {
+          "queryReplacement": "={{ $json.locationId }}"
+        }
+      },
+      "id": "463a7132-5126-4389-88e1-5dfeda5cc4b1",
+      "name": "Read Token",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-1104, 192],
+      "credentials": {
+        "postgres": { "id": "whxa9IoTsBseYPQe", "name": "Success Supabase" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "active",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "active",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7d4152de-d6d5-4ad5-95e5-5fdad017d8d4",
+      "name": "Token Active?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-880, 192]
+    },
+    {
+      "parameters": {
+        "url": "https://services.leadconnectorhq.com/contacts/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "locationId", "value": "={{ $('When Called').item.json.locationId }}" },
+            { "name": "limit", "value": "100" }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Accept", "value": "application/json" },
+            { "name": "Version", "value": "2021-07-28" },
+            { "name": "Authorization", "value": "=Bearer {{ $json.access_token }}" }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": { "neverError": true, "responseFormat": "json" }
+          },
+          "pagination": {
+            "pagination": {
+              "parameters": {
+                "parameters": [
+                  { "name": "startAfterId", "value": "={{ $response.body.meta?.startAfterId }}" },
+                  { "name": "startAfter", "value": "={{ $response.body.meta?.startAfter }}" }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.meta || !$response.body.meta.startAfterId || ($response.body.contacts || []).length === 0 }}",
+              "limitPagesFetched": true,
+              "maxRequests": 200,
+              "requestInterval": 350
+            }
+          }
+        }
+      },
+      "id": "6ba3324d-6e34-4201-a6a2-8836bba3b652",
+      "name": "Fetch Contacts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-656, 80]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Flatten every page into one contact list, hash each address, and CAPTURE\n// THE CONTACT'S STATUS.\n//\n// Why status matters: check_suppression is status-aware. It suppresses an\n// address when the status is in config.never_mail_statuses, or when\n// last_job_at falls inside the lapse window. A row with NEITHER reads as a\n// lead and is NOT suppressed. The previous version of this workflow wrote no\n// status at all, so a completed backfill produced a full cache that\n// suppressed nobody - while satisfying the can_send row check and opening\n// the gate. Verified against the live function before this rewrite.\n//\n// The hashing rules below MUST stay identical to src/lib/address.js and\n// _shared/address.ts, or suppression silently breaks.\n\nconst crypto = require('crypto');\n\nconst DIRECTIONALS = {north:'n',south:'s',east:'e',west:'w',northeast:'ne',northwest:'nw',southeast:'se',southwest:'sw',n:'n',s:'s',e:'e',w:'w',ne:'ne',nw:'nw',se:'se',sw:'sw'};\nconst STREET = {street:'st',st:'st',avenue:'ave',ave:'ave',av:'ave',road:'rd',rd:'rd',drive:'dr',dr:'dr',lane:'ln',ln:'ln',court:'ct',ct:'ct',circle:'cir',cir:'cir',boulevard:'blvd',blvd:'blvd',boul:'blvd',place:'pl',pl:'pl',terrace:'ter',ter:'ter',terr:'ter',parkway:'pkwy',pkwy:'pkwy',pky:'pkwy',highway:'hwy',hwy:'hwy',trail:'trl',trl:'trl',way:'way',square:'sq',sq:'sq',loop:'loop',crescent:'cres',cres:'cres',close:'cl',gardens:'gdns',gdns:'gdns',heights:'hts',hts:'hts',junction:'jct',jct:'jct',manor:'mnr',mnr:'mnr',point:'pt',pt:'pt',ridge:'rdg',rdg:'rdg',station:'sta',sta:'sta',extension:'ext',ext:'ext'};\nconst UNIT = new Set(['apt','apartment','unit','ste','suite','rm','room','fl','floor','bldg','building','dept','department','lot','trlr','trailer','spc','space','key','slip','hangar','pier','basement','bsmt','front','frnt','lower','lowr','upper','uppr','rear','side','penthouse','ph']);\nconst ORD = {first:'1st',second:'2nd',third:'3rd',fourth:'4th',fifth:'5th',sixth:'6th',seventh:'7th',eighth:'8th',ninth:'9th',tenth:'10th',eleventh:'11th',twelfth:'12th'};\n\nfunction stripDia(s){return s.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');}\n\nfunction normaliseAddress(address){\n  if(address==null) return '';\n  let s=stripDia(String(address)).toLowerCase();\n  s=s.replace(/[,]/g,' ').replace(/#\\s*/g,' apt ').replace(/[.'\\u2019]/g,'').replace(/[^a-z0-9]+/g,' ');\n  let toks=s.split(' ').filter(Boolean);\n  if(!toks.length) return '';\n  const out=[];\n  for(let i=0;i<toks.length;i++){\n    if(UNIT.has(toks[i])){ const nx=toks[i+1]; if(nx!==undefined && /^[a-z0-9]{1,6}$/.test(nx)) i++; continue; }\n    out.push(toks[i]);\n  }\n  if(out.length) toks=out;\n  toks=toks.map(t=>ORD[t]||t).map(t=>DIRECTIONALS[t]||STREET[t]||t);\n  return toks.join(' ');\n}\n\nfunction normalisePostal(pc){\n  if(pc==null) return '';\n  let s=stripDia(String(pc)).toLowerCase().replace(/[^a-z0-9]+/g,'');\n  if(/^\\d{9}$/.test(s)) return s.slice(0,5);\n  return s;\n}\n\nfunction addressHash(address,postal){\n  const a=normaliseAddress(address);\n  if(a==='') return null;\n  const p=normalisePostal(postal);\n  return crypto.createHash('sha1').update(a+'|'+p).digest('hex').slice(0,12);\n}\n\n// HighLevel does not expose one canonical \"status\" on a contact, and it\n// differs by how the sub-account is set up. Read the plausible fields in\n// priority order and report what was actually found, rather than assuming.\nfunction readStatus(c){\n  const direct = c.status ?? c.contactStatus ?? c.type ?? c.contactType;\n  if (direct != null && String(direct).trim() !== '') return String(direct).trim();\n  // Some accounts keep it on a custom field instead.\n  const cf = c.customFields || c.custom_fields || [];\n  if (Array.isArray(cf)) {\n    for (const f of cf) {\n      const key = String(f.key || f.name || f.id || '').toLowerCase();\n      if (key.includes('status')) {\n        const v = f.value ?? f.fieldValue;\n        if (v != null && String(v).trim() !== '') return String(v).trim();\n      }\n    }\n  }\n  return null;\n}\n\n// Values go into SQL literals below, so every one is validated to a strict\n// charset first. Nothing that fails validation reaches the statement.\nfunction sqlText(v){\n  if (v == null || v === '') return 'null';\n  return \"'\" + String(v).replace(/'/g, \"''\") + \"'\";\n}\nfunction safeId(v){\n  const s = String(v == null ? '' : v).trim();\n  return /^[A-Za-z0-9_\\-:.]{1,128}$/.test(s) ? s : null;\n}\nfunction safeStatus(v){\n  if (v == null) return null;\n  const s = String(v).replace(/[^A-Za-z0-9 _\\-\\/]/g, '').trim().slice(0, 64);\n  return s === '' ? null : s;\n}\n\nlet contacts=[];\nfor(const item of $input.all()){\n  const c=item.json.contacts || (item.json.contact ? [item.json.contact] : []);\n  if(Array.isArray(c)) contacts=contacts.concat(c);\n}\n\nconst locationId = safeId($('When Called').first().json.locationId);\nif (!locationId) throw new Error('locationId is missing or not a safe identifier');\n\nconst dryRun = String($('When Called').first().json.dryRun ?? '').toLowerCase() === 'true';\n\nconst statusCounts = {};\nconst byHash = new Map();\nlet skippedNoAddress = 0, rippleSourced = 0, noStatus = 0;\n\nfor(const c of contacts){\n  const addr = c.address1||c.address||c.line1||'';\n  const postal = c.postalCode||c.postal_code||c.zip||'';\n  const h = addressHash(addr, postal);\n  if(h===null){ skippedNoAddress++; continue; }\n\n  const tags = Array.isArray(c.tags) ? c.tags.map(t=>String(t).toLowerCase()) : [];\n  const src = String(c.source || '').toLowerCase();\n  const isRipple = tags.includes('ripple_neighbor') || src.includes('ripple');\n  if (isRipple) rippleSourced++;\n\n  const raw = readStatus(c);\n  const status = safeStatus(raw);\n  const key = raw == null ? '(none)' : String(raw);\n  statusCounts[key] = (statusCounts[key] || 0) + 1;\n  if (status === null) noStatus++;\n\n  // Several contacts can share one address. Keep the one that carries a\n  // status - losing it to a blank duplicate would un-suppress the household.\n  const prev = byHash.get(h);\n  if (!prev || (prev.status === null && status !== null)) {\n    byHash.set(h, { addr_hash: h, ghl_contact_id: safeId(c.id||c._id), status: status });\n  }\n}\n\nconst rows = Array.from(byHash.values());\n\n// One statement per chunk instead of one per contact: the Postgres node's\n// queryReplacement splits on commas, so any value containing one corrupts the\n// parameter list (the documented WF0 bug). Building validated literals avoids\n// parameters entirely, and turns thousands of round trips into a handful.\nconst CHUNK = 500;\nconst chunks = [];\nfor (let i = 0; i < rows.length; i += CHUNK) {\n  const slice = rows.slice(i, i + CHUNK);\n  const values = slice.map(r =>\n    '(' + sqlText(locationId) + ',' + sqlText(r.addr_hash) + ',' +\n    sqlText(r.ghl_contact_id) + \",'sync',\" + sqlText(r.status) + ',' +\n    (r.status === null ? 'null' : 'now()') + ',now())'\n  ).join(',\\n');\n\n  chunks.push({ json: {\n    _chunk: true,\n    index: chunks.length,\n    rows: slice.length,\n    sql:\n      'insert into client_addresses (location_id, addr_hash, ghl_contact_id, source, status, status_synced_at, last_seen_at) values\\n' +\n      values +\n      '\\non conflict (location_id, addr_hash) do update set\\n' +\n      '  ghl_contact_id = coalesce(excluded.ghl_contact_id, client_addresses.ghl_contact_id),\\n' +\n      // A blank status must never overwrite a known one: that would silently\n      // un-suppress a customer.\n      '  status = coalesce(excluded.status, client_addresses.status),\\n' +\n      '  status_synced_at = coalesce(excluded.status_synced_at, client_addresses.status_synced_at),\\n' +\n      '  last_seen_at = now();'\n  }});\n}\n\nconst summary = {\n  _summary: true,\n  location_id: locationId,\n  dry_run: dryRun,\n  total_contacts: contacts.length,\n  unique_addresses: rows.length,\n  skipped_no_address: skippedNoAddress,\n  ripple_sourced_contacts: rippleSourced,\n  addresses_without_status: noStatus,\n  status_values_found: statusCounts,\n  chunks: chunks.length\n};\n\nif (dryRun) return [{ json: summary }];\nreturn [{ json: summary }, ...chunks];"
+      },
+      "id": "db01f94e-fbcd-4a48-8b68-c3c094e32c68",
+      "name": "Hash + Read Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-448, 80]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose" },
+          "conditions": [
+            {
+              "id": "is-chunk",
+              "leftValue": "={{ $json._chunk }}",
+              "rightValue": "",
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6a7b8eef-7f72-47e3-9e35-024a9a6c3be0",
+      "name": "Is Chunk?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-224, 80]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.sql }}",
+        "options": {}
+      },
+      "id": "5d229d09-1abf-4352-8afb-2169846bdaf7",
+      "name": "Store Chunk",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [0, 0],
+      "credentials": {
+        "postgres": { "id": "whxa9IoTsBseYPQe", "name": "Success Supabase" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Collapse every chunk result into ONE item, so the gate is flipped once\n// rather than once per chunk.\nconst s = $('Hash + Read Status').first().json;\nreturn [{ json: { location_id: s.location_id, chunks_written: $input.all().length } }];"
+      },
+      "id": "8c1f0a22-1f4a-4a41-9d3e-7b6a2f0c1a10",
+      "name": "All Chunks Done",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [224, 0]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Open the can_send gate - but only if the cache actually has rows for this\n-- location. The old version set the timestamp unconditionally, which is how\n-- A4 ended up flagged as backfilled with an empty cache. can_send checks the\n-- same thing independently (migration 0033); this is the second lock.\nupdate config set address_backfill_completed_at = now()\n where location_id = $1\n   and exists (select 1 from client_addresses ca where ca.location_id = $1)\nreturning location_id, address_backfill_completed_at,\n          (select count(*) from client_addresses ca where ca.location_id = $1) as cached_addresses,\n          (select count(*) from client_addresses ca where ca.location_id = $1 and ca.status is not null) as with_status;",
+        "options": {
+          "queryReplacement": "={{ $('When Called').item.json.locationId }}"
+        }
+      },
+      "id": "45e856ed-5023-444f-acfc-3a6e10a90677",
+      "name": "Complete Backfill",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [448, 0],
+      "credentials": {
+        "postgres": { "id": "whxa9IoTsBseYPQe", "name": "Success Supabase" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Readable run summary. status_values_found is the important one: it lists\n// exactly what HighLevel returned, so config.never_mail_statuses can be set\n// to match reality instead of a guess.\nconst s = $('Hash + Read Status').first().json;\nconst g = $input.first().json || {};\nreturn [{ json: {\n  done: true,\n  location_id: s.location_id,\n  total_contacts: s.total_contacts,\n  unique_addresses: s.unique_addresses,\n  skipped_no_address: s.skipped_no_address,\n  addresses_without_status: s.addresses_without_status,\n  ripple_sourced_contacts: s.ripple_sourced_contacts,\n  status_values_found: s.status_values_found,\n  cached_addresses: g.cached_addresses ?? null,\n  with_status: g.with_status ?? null,\n  gate_opened: !!g.address_backfill_completed_at\n} }];"
+      },
+      "id": "2e7b0047-f83f-4289-8370-34d2fcf56915",
+      "name": "Run Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [672, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dry run: report what WOULD be written, touch nothing. Run this first on any\n// new client and read status_values_found before letting it write.\nconst s = $input.first().json;\nreturn [{ json: Object.assign({ done: true, wrote_nothing: true }, s) }];"
+      },
+      "id": "3b9d1c77-55aa-4d0e-9f21-2c4e8a7b6d31",
+      "name": "Dry Run Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 208]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Reached only when the token isn't active. Fail loudly rather than\n// silently completing a backfill for a revoked client.\nreturn [{ json: { done: false, reason: 'token_not_active', locationId: $('When Called').first().json.locationId } }];"
+      },
+      "id": "21023b18-c1c3-4123-84a7-e484990b1e2a",
+      "name": "Not Active",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-656, 304]
+    }
+  ],
+  "pinData": {
+    "When Called": [
+      {
+        "json": {
+          "locationId": "7cmPKJr67hSaejdDZ6Yk",
+          "dryRun": "true"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Called": { "main": [[{ "node": "Read Token", "type": "main", "index": 0 }]] },
+    "Read Token": { "main": [[{ "node": "Token Active?", "type": "main", "index": 0 }]] },
+    "Token Active?": {
+      "main": [
+        [{ "node": "Fetch Contacts", "type": "main", "index": 0 }],
+        [{ "node": "Not Active", "type": "main", "index": 0 }]
+      ]
+    },
+    "Fetch Contacts": { "main": [[{ "node": "Hash + Read Status", "type": "main", "index": 0 }]] },
+    "Hash + Read Status": { "main": [[{ "node": "Is Chunk?", "type": "main", "index": 0 }]] },
+    "Is Chunk?": {
+      "main": [
+        [{ "node": "Store Chunk", "type": "main", "index": 0 }],
+        [{ "node": "Dry Run Report", "type": "main", "index": 0 }]
+      ]
+    },
+    "Store Chunk": { "main": [[{ "node": "All Chunks Done", "type": "main", "index": 0 }]] },
+    "All Chunks Done": { "main": [[{ "node": "Complete Backfill", "type": "main", "index": 0 }]] },
+    "Complete Backfill": { "main": [[{ "node": "Run Summary", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "versionId": "e1a7c3b2-0000-4c11-9f22-7a1b9c4d5e60",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cae4a3a09e06478c3e0d1d03219f7d9bc1bfafe5b998d1e148acbc6921e19a99"
+  },
+  "id": "dXQgyk0B8QJeFRv6",
+  "tags": []
+}
