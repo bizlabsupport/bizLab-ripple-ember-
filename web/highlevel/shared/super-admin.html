@@ -588,6 +588,9 @@ async function loadTenants() {
     calendarId: l.ghl_calendar_id || "",
     bookingUrl: l.booking_url || "",
     subaccountId: l.thanksio_subaccount_id || "",
+    billingContactId: l.billing_ghl_contact_id || "",
+    betaBillingEnabled: !!l.beta_billing_enabled,
+    lowBalanceAlertCents: l.low_balance_alert_cents ?? 5000,
     postcardMode: l.postcard_mode || "legacy",
     postcardBrandKey: l.postcard_brand_key || "",
     postcardCreativeId: l.postcard_creative_id || "",
@@ -1234,6 +1237,18 @@ function modalWorkspace(id, startSect) {
     <div class="err hidden" id="d-postcard-err"></div>
     <div class="hint">Creative sends use the saved front and message together. Ripple preserves the unique signed QR URL on every postcard.</div>
 
+    <div class="sect spaced">Ripple beta wallet</div>
+    <p class="paneintro">Billing contact must be from main Ripple HighLevel location WzwhUvsDxq3KOUJqAjmJ. Saving this ID does not charge the contact. Live checkout is not active yet.</p>
+    <label class="field"><span class="lbl">HighLevel billing Contact ID</span>
+      <input id="d-billing-contact" value="${esc(t.billingContactId)}" placeholder="Contact ID in main Ripple sub-account" autocomplete="off"></label>
+    <label class="field"><span class="lbl">Low balance alert ($)</span>
+      <input id="d-low-balance" inputmode="decimal" value="${esc(centsToStr(t.lowBalanceAlertCents))}" placeholder="50.00"></label>
+    <label class="field" style="display:flex;align-items:center;gap:10px">
+      <input type="checkbox" id="d-beta-billing" ${t.betaBillingEnabled ? "checked" : ""} style="width:auto">
+      <span class="lbl">Enable beta wallet requests for this location</span>
+    </label>
+    <div class="hint">Wallet visibility and pending requests only. No card charges or automatic funding until checkout integration is verified.</div>
+    <div class="err hidden" id="d-beta-billing-err"></div>
     <div class="sect spaced">This client's rates</div>
     <p class="paneintro">Leave blank to use the platform base price. The rate is stamped on each card as it sends, so a change here never re-prices cards already in the ground.</p>
     <div class="row2">
@@ -1636,6 +1651,9 @@ function modalWorkspace(id, startSect) {
     const cal = $("d-calendar").value;
     const booking = $("d-booking").value.trim();
     const sub = $("d-sub").value.trim();
+    const billingContact = $("d-billing-contact").value.trim();
+    const betaEnabled = $("d-beta-billing").checked;
+    const lowBalance = $("d-low-balance").value.trim();
     const bookPage = $("d-bookpage").value.trim();
     const accent = $("d-accent").value.trim();
     const pCard = $("d-price-card").value.trim();
@@ -1646,12 +1664,15 @@ function modalWorkspace(id, startSect) {
     const pcImage = $("d-postcard-image").value.trim();
     const pcMessage = $("d-postcard-message").value.trim();
 
-    ["d-postcard-err", "d-landing-err", "d-sub-err", "d-cal-err", "d-bookpage-err", "d-theme-err", "d-price-err", "prize-err"]
+    ["d-beta-billing-err", "d-postcard-err", "d-landing-err", "d-sub-err", "d-cal-err", "d-bookpage-err", "d-theme-err", "d-price-err", "prize-err"]
       .forEach((i) => clear($(i)));
     ["d-landing", "d-sub", "m-name", "d-bookpage", "d-accent", "d-price-card", "d-price-lookup"]
       .forEach((i) => $(i).classList.remove("bad"));
 
     if (!name) return fail("general", "m-name", null, "The franchise name cannot be empty.");
+    if (betaEnabled && !billingContact) return fail("mail", "d-billing-contact", "d-beta-billing-err", "Enter the billing Contact ID before enabling beta wallet requests.");
+    if (billingContact && !/^[a-zA-Z0-9_-]{5,100}$/.test(billingContact)) return fail("mail", "d-billing-contact", "d-beta-billing-err", "Enter a valid HighLevel Contact ID.");
+    if (lowBalance && (!Number.isFinite(Number(lowBalance)) || Number(lowBalance) < 0 || Number(lowBalance) > 5000)) return fail("mail", "d-low-balance", "d-beta-billing-err", "Invalid low-balance threshold.");
     const isPositiveId = (v) => /^\d+$/.test(v) && Number.isSafeInteger(Number(v)) && Number(v)>0;
     if (pcMode === "brand_default" && !pcBrand) return fail("mail", "d-postcard-brand", "d-postcard-err", "Enter a configured brand key.");
     if (pcMode === "creative" && !isPositiveId(pcCreative)) return fail("mail", "d-postcard-creative", "d-postcard-err", "Enter a valid Creative ID.");
@@ -1722,6 +1743,9 @@ function modalWorkspace(id, startSect) {
           ghl_calendar_id: cal || null,
           booking_url: booking || null,
           thanksio_subaccount_id: sub || null,
+          billing_ghl_contact_id: billingContact || null,
+          beta_billing_enabled: betaEnabled,
+          low_balance_alert_cents: lowBalance ? strToCents(lowBalance) : 5000,
           postcard_mode: pcMode,
           postcard_brand_key: pcBrand || null,
           postcard_creative_id: pcCreative || null,
@@ -1744,6 +1768,8 @@ function modalWorkspace(id, startSect) {
 
       t.name = name; t.landingUrl = landing; t.calendarId = cal; t.bookingUrl = booking;
       t.subaccountId = sub; t.bookingPageUrl = bookPage;
+      t.billingContactId=billingContact; t.betaBillingEnabled=betaEnabled;
+      t.lowBalanceAlertCents=lowBalance ? strToCents(lowBalance) : 5000;
       t.postcardMode = pcMode; t.postcardBrandKey = pcBrand;
       t.postcardCreativeId = pcCreative; t.postcardImageTemplateId = pcImage;
       t.postcardMessageTemplateId = pcMessage;
@@ -1755,7 +1781,8 @@ function modalWorkspace(id, startSect) {
       render();
       toast("Settings saved.");
     } catch (e) {
-      if (String(e.field || "").startsWith("postcard_")) fail("mail", null, "d-postcard-err", e.message);
+      if (String(e.field || "").startsWith("billing_ghl_") || e.field === "low_balance_alert_cents" || e.field === "beta_billing_enabled") fail("mail", null, "d-beta-billing-err", e.message);
+      else if (String(e.field || "").startsWith("postcard_")) fail("mail", null, "d-postcard-err", e.message);
       else if (e.field === "thanksio_subaccount_id") fail("mail", "d-sub", "d-sub-err", e.message);
       else if (e.field === "landing_url") fail("landing", "d-landing", "d-landing-err", e.message);
       else if (e.field === "ghl_calendar_id") fail("highlevel", null, "d-cal-err", e.message);
