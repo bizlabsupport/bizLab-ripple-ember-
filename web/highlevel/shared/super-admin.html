@@ -689,13 +689,59 @@ async function loadBillingOverview() {
         '<td style="padding:10px 8px">'+(active?'Enabled':'Off')+'</td>'+
         '<td style="padding:10px 8px">'+(l.billing_contact_configured?'Configured':'Missing')+'</td>'+
         '<td style="padding:10px 8px">'+status+'</td>'+
-        '<td style="padding:10px 8px"><button type="button" class="btn ghost sm" data-wallet-details="'+esc(l.location_id)+'">Transactions</button></td></tr>';
+        '<td style="padding:10px 8px;white-space:nowrap"><button type="button" class="btn ghost sm" data-wallet-details="'+esc(l.location_id)+'">Transactions</button> '+
+        '<button type="button" class="btn sm" data-wallet-credit="'+esc(l.location_id)+'">Record paid credit</button></td></tr>';
     }).join('') : '<tr><td colspan="6" style="padding:12px">No locations.</td></tr>';
     document.getElementById("wallet-admin-note").textContent=result.note||'Balances reflect recorded ledger entries only.';
   }catch(err){
     rows.innerHTML='<tr><td colspan="6" style="padding:12px;color:#B01657">Unable to load wallet balances: '+esc(err.message)+'</td></tr>';
   }
 }
+function openPaidCreditModal(id) {
+  const t=BILLING_ROWS.find(x=>x.location_id===id);
+  if(!t){toast("Location was not found in billing tracker");return;}
+  const defaultAmount = id==="0mlZlQJf3q9VUxb5z0hM" ? "250.00" : "";
+  openModal(
+    '<div class="modal-head"><div><div class="t">Record Paid Wallet Credit</div><div class="s">'+esc(t.client_name||id)+'</div></div>'+closeX+'</div>'+
+    '<div class="modal-body" style="max-height:65vh;overflow-y:auto">'+
+    '<div class="info-box">Use this only when you have already collected the credit-card payment outside Ripple. This does not charge the card or independently verify the processor receipt. Confirm the transaction ID and amount in Stripe/HighLevel first.</div>'+
+    '<div class="field"><span class="lbl">HighLevel Location ID</span><input value="'+esc(id)+'" readonly></div>'+
+    '<label class="field"><span class="lbl">Amount collected (USD)</span><input id="wallet-credit-amount" inputmode="decimal" placeholder="250.00" value="'+esc(defaultAmount)+'"></label>'+
+    '<label class="field"><span class="lbl">Card payment transaction ID / reference</span><input id="wallet-credit-reference" autocomplete="off" placeholder="Enter actual Stripe/HighLevel charge ID"></label>'+
+    '<label class="field"><span class="lbl">Description</span><input id="wallet-credit-note" autocomplete="off" value="Initial Ripple Beta Funding"></label>'+
+    '<label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.5;margin:15px 0"><input type="checkbox" id="wallet-credit-confirm" style="margin-top:4px;flex:none">I confirm the payment was successfully collected by credit card, the amount and reference match the payment receipt, and this payment has not already been credited.</label>'+
+    '<div id="wallet-credit-error" role="alert" style="color:#B01657;font-size:13px;margin-bottom:12px"></div>'+
+    '<button type="button" class="btn" id="wallet-credit-submit">Record paid credit</button>'+
+    '</div>',620);
+  const $=(key)=>document.getElementById(key);
+  $("wallet-credit-submit").onclick=async function(){
+    const amountString=$("wallet-credit-amount").value.trim();
+    const amount=Number(amountString);
+    const ref=$("wallet-credit-reference").value.trim();
+    const notes=$("wallet-credit-note").value.trim();
+    const confirmed=$("wallet-credit-confirm").checked;
+    const invalid=(msg)=>{$("wallet-credit-error").textContent=msg;};
+    if(!/^\d{1,4}(?:\.\d{1,2})?$/.test(amountString)||!(amount>=1&&amount<=5000))
+      return invalid("Enter a valid amount between $1.00 and $5,000.00.");
+    if(ref.length<6||ref.length>200)return invalid("Enter the actual card payment reference, at least six characters.");
+    if(!confirmed)return invalid("Confirm you verified the successful card payment.");
+    const cents=Math.round(amount*100);
+    if(!window.confirm("Record "+walletMoney(cents)+" for "+(t.client_name||id)+" as an already-collected card payment? This adds wallet credits without charging a card."))return;
+    $("wallet-credit-submit").disabled=true;
+    $("wallet-credit-submit").textContent="Recording...";
+    try{
+      const result=await adminOp("recordPaidCredit",{locationId:id,amountCents:cents,paymentReference:ref,notes:notes,confirmPaymentCollected:true});
+      closeModal();
+      await loadBillingOverview();
+      toast("Paid credit recorded. Balance: "+walletMoney(result.balanceCents));
+    }catch(err){
+      invalid(err.message||"Unable to record credit");
+      $("wallet-credit-submit").disabled=false;
+      $("wallet-credit-submit").textContent="Record paid credit";
+    }
+  };
+}
+
 async function showBillingDetails(id) {
   try {
     const r=await adminOp("billingOverview",{locationId:id});
@@ -2013,6 +2059,8 @@ function modalEmberManage(id) {
 
 // -- Event delegation --
 document.addEventListener("click", (e) => {
+  const paidCredit = e.target.closest("[data-wallet-credit]");
+  if (paidCredit) { openPaidCreditModal(paidCredit.dataset.walletCredit); return; }
   const walletDetails = e.target.closest("[data-wallet-details]");
   if (walletDetails) { showBillingDetails(walletDetails.dataset.walletDetails); return; }
   if (e.target.closest("#wallet-admin-refresh")) { loadBillingOverview(); return; }
