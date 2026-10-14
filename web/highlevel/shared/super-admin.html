@@ -366,6 +366,25 @@
 
     <div class="stats" id="stats"></div>
 
+    <div class="controls">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="search" placeholder="Search by name or slug...">
+      </div>
+      <div class="segbar" id="segbar">
+        <button class="seg on" data-s="all">all</button>
+        <button class="seg" data-s="active">active</button>
+        <button class="seg" data-s="suspended">suspended</button>
+      </div>
+    </div>
+
+    <div class="table">
+      <div class="thead">
+        <div>Location</div><div>Plan</div><div>HighLevel link</div><div>Ripple value</div><div></div>
+      </div>
+      <div id="rows"></div>
+    </div>
+
     <!-- Super Admin Ripple wallet balance tracker, read-only. -->
     <section id="ripple-billing-overview" style="background:#fff;border:1px solid #E3E9EE;border-radius:14px;padding:20px;margin:0 0 22px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
@@ -385,25 +404,6 @@
       </div>
       <p id="wallet-admin-note" style="color:#6F7885;font-size:12px;margin:12px 0 0">Balances reflect recorded ledger entries only. Payment verification and usage deductions are still pending.</p>
     </section>
-
-    <div class="controls">
-      <div class="search">
-        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        <input id="search" placeholder="Search by name or slug...">
-      </div>
-      <div class="segbar" id="segbar">
-        <button class="seg on" data-s="all">all</button>
-        <button class="seg" data-s="active">active</button>
-        <button class="seg" data-s="suspended">suspended</button>
-      </div>
-    </div>
-
-    <div class="table">
-      <div class="thead">
-        <div>Location</div><div>Plan</div><div>HighLevel link</div><div>Ripple value</div><div></div>
-      </div>
-      <div id="rows"></div>
-    </div>
 
     <p class="note">
       Cross-tenant visibility is granted by the <code>is_super_admin</code> flag, read server-side inside
