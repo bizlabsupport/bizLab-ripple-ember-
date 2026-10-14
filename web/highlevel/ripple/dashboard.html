@@ -421,8 +421,8 @@
           <option value="2500">$25.00</option><option value="5000">$50.00</option><option value="10000">$100.00</option><option value="25000">$250.00</option><option value="custom">Custom amount</option>
         </select>
         <input id="rw-custom" type="number" min="10" max="5000" step="0.01" placeholder="Custom amount, $10–$5,000" style="display:none;margin-top:8px;padding:12px;border:1px solid #d1d9e0;border-radius:9px;width:100%;max-width:340px">
-        <p style="font-size:12px;color:#5F6E7B;margin:8px 0 12px">Checkout is not active yet. Requests do not charge your saved card or add credits.</p>
-        <button type="button" id="rw-submit" style="background:#B01657;color:white;border:0;padding:12px 22px;border-radius:9px;cursor:pointer;font-weight:700">Request Credits</button>
+        <p style="font-size:12px;color:#5F6E7B;margin:8px 0 12px">Payments are collected by HighLevel in Test Mode. Wallet crediting is pending payment verification. Check that the form displays the correct details before submitting.</p>
+        <button type="button" id="rw-submit" style="background:#B01657;color:white;border:0;padding:12px 22px;border-radius:9px;cursor:pointer;font-weight:700">Continue to Payment Form (Test)</button>
         <div id="rw-message" role="status" style="font-size:13px;margin-top:10px"></div>
       </div>
       <div style="margin-top:20px">
@@ -1158,6 +1158,7 @@
           $("rw-balance").textContent=money(w.balanceCents);
           $("rw-alert").textContent=w.balanceCents<=w.lowBalanceAlertCents?"Balance is low. New mailings may require additional credits.":"";
           $("rw-form").style.display=w.betaEnabled?"":"none";
+          $("rw-submit").disabled=!w.checkoutReady;
           if(w.betaEnabled&&!w.billingContactConfigured){
             $("rw-submit").disabled=true;
             $("rw-message").textContent="Billing Contact ID must be set by your Ripple administrator.";
@@ -1173,9 +1174,18 @@
         const v=$("rw-amount").value;
         const cents=v==="custom"?Math.round(Number($("rw-custom").value)*100):Number(v);
         if(!Number.isSafeInteger(cents)||cents<1000||cents>500000){$("rw-message").textContent="Enter an amount between $10 and $5,000.";return;}
-        if(!confirm("Submit a request for "+money(cents)+"? This will NOT charge your card."))return;
+        if(!confirm("Open the HighLevel TEST payment form for a "+money(cents)+" top-up request? The payment amount must be selected again on the form, and wallet credits will remain pending verification."))return;
         $("rw-submit").disabled=true;
-        try{const result=await rpc("request_topup",{amountCents:cents});$("rw-message").textContent=result.message;await load();}
+        try{
+          const tab=window.open("about:blank","_blank");
+          const result=await rpc("request_topup",{amountCents:cents});
+          $("rw-message").textContent=result.message;
+          if(result.checkoutUrl){
+            if(tab){tab.opener=null;tab.location.href=result.checkoutUrl;}
+            else {const link=document.createElement("a");link.href=result.checkoutUrl;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open HighLevel payment form";$("rw-message").append(" ",link);}
+          }else if(tab){tab.close();}
+          await load();
+        }
         catch(err){$("rw-message").textContent=err.message;}
         finally{$("rw-submit").disabled=false;}
       });
