@@ -408,33 +408,6 @@
     <!-- Control Center: what is about to mail. Hidden entirely on a quiet day. -->
     <section id="ripple-control-center" style="display:none"></section>
 
-    <!-- Ripple prepaid wallet; this section never collects credit card data. -->
-    <section id="ripple-wallet" aria-label="Ripple billing" style="background:#fff;border:1px solid #e0e5e8;border-radius:16px;padding:24px;margin:0 0 22px;display:none">
-      <div style="display:flex;justify-content:space-between;gap:16px;align-items:start;flex-wrap:wrap">
-        <div><h2 style="font-size:20px;margin:0 0 6px">Ripple Wallet</h2><p style="color:#5F6E7B;font-size:13px;margin:0">Track your prepaid balance and request additional credits.</p></div>
-        <div style="text-align:right"><div style="font-size:12px;color:#5F6E7B">Available balance</div><div id="rw-balance" style="font-weight:800;font-size:28px">$—</div></div>
-      </div>
-      <div id="rw-alert" role="status" style="margin-top:12px;font-size:13px;color:#8A1044"></div>
-      <div id="rw-form" style="margin-top:16px">
-        <label for="rw-amount" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px">Amount to add (USD)</label>
-        <select id="rw-amount" style="padding:12px;border:1px solid #d1d9e0;border-radius:9px;width:100%;max-width:340px">
-          <option value="2500">$25.00</option><option value="5000">$50.00</option><option value="10000">$100.00</option><option value="25000">$250.00</option><option value="custom">Custom amount</option>
-        </select>
-        <input id="rw-custom" type="number" min="10" max="5000" step="0.01" placeholder="Custom amount, $10–$5,000" style="display:none;margin-top:8px;padding:12px;border:1px solid #d1d9e0;border-radius:9px;width:100%;max-width:340px">
-        <p style="font-size:12px;color:#5F6E7B;margin:8px 0 12px">Payments are collected by HighLevel in Test Mode. Wallet crediting is pending payment verification. Check that the form displays the correct details before submitting.</p>
-        <button type="button" id="rw-submit" style="background:#B01657;color:white;border:0;padding:12px 22px;border-radius:9px;cursor:pointer;font-weight:700">Continue to Payment Form (Test)</button>
-        <div id="rw-message" role="status" style="font-size:13px;margin-top:10px"></div>
-      </div>
-      <div style="margin-top:20px">
-        <h3 style="font-size:15px;margin:0 0 8px">Recent wallet transactions</h3>
-        <div id="rw-transactions" style="font-size:13px;color:#5F6E7B">Loading wallet…</div>
-      </div>
-      <div style="margin-top:15px">
-        <h3 style="font-size:15px;margin:0 0 8px">Top-up requests</h3>
-        <div id="rw-requests" style="font-size:13px;color:#5F6E7B">Loading…</div>
-      </div>
-    </section>
-
     <!-- HERO: the Monday Report receipt -->
     <section class="receipt-wrap" aria-label="Monday report">
       <div class="receipt">
@@ -487,6 +460,34 @@
         </div>
       </section>
     </div>
+    <!-- Ripple prepaid wallet; this section never collects credit card data. -->
+    <section id="ripple-wallet" aria-label="Ripple billing" style="background:#fff;border:1px solid #e0e5e8;border-radius:16px;padding:24px;margin:0 0 22px;display:none">
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:start;flex-wrap:wrap">
+        <div><h2 style="font-size:20px;margin:0 0 6px">Ripple Wallet</h2><p style="color:#5F6E7B;font-size:13px;margin:0">Track your prepaid balance and request additional credits.</p></div>
+        <div style="text-align:right"><div style="font-size:12px;color:#5F6E7B">Available balance</div><div id="rw-balance" style="font-weight:800;font-size:28px">$—</div></div>
+      </div>
+      <div id="rw-alert" role="status" style="margin-top:12px;font-size:13px;color:#8A1044"></div>
+      <div id="rw-form" style="margin-top:16px">
+        <label for="rw-amount" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px">Amount to add (USD)</label>
+        <select id="rw-amount" style="padding:12px;border:1px solid #d1d9e0;border-radius:9px;width:100%;max-width:340px">
+          <option value="2500">$25.00</option><option value="5000">$50.00</option><option value="10000">$100.00</option><option value="25000">$250.00</option><option value="custom">Custom amount</option>
+        </select>
+        <input id="rw-custom" type="number" min="10" max="5000" step="0.01" placeholder="Custom amount, $10–$5,000" style="display:none;margin-top:8px;padding:12px;border:1px solid #d1d9e0;border-radius:9px;width:100%;max-width:340px">
+        <p style="font-size:12px;color:#5F6E7B;margin:8px 0 12px">Payments are collected by HighLevel in Test Mode. Wallet crediting is pending payment verification. Check that the form displays the correct details before submitting.</p>
+        <button type="button" id="rw-submit" style="background:#B01657;color:white;border:0;padding:12px 22px;border-radius:9px;cursor:pointer;font-weight:700">Continue to Payment Form (Test)</button>
+        <div id="rw-message" role="status" style="font-size:13px;margin-top:10px"></div>
+      </div>
+      <div style="margin-top:20px">
+        <h3 style="font-size:15px;margin:0 0 8px">Recent wallet transactions</h3>
+        <div id="rw-transactions" style="font-size:13px;color:#5F6E7B">Loading wallet…</div>
+      </div>
+      <div style="margin-top:15px">
+        <h3 style="font-size:15px;margin:0 0 8px">Top-up requests</h3>
+        <div id="rw-requests" style="font-size:13px;color:#5F6E7B">Loading…</div>
+      </div>
+    </section>
+
+
   </main>
 
 <!-- -- Control Center component -- -->
@@ -538,6 +539,31 @@
     var priceCents = 150;
     var lookupCents = 5;
     var capInfo = null;
+    var techFilter = 'all';
+    var technicianOptions = [];
+    function techniciansFor(r) {
+      var list = Array.isArray(r.assigned_technicians) ? r.assigned_technicians : [];
+      var seen = {};
+      return list.map(function(x) {
+        var obj = x && typeof x === 'object';
+        var id = obj ? (x.id ?? x.technician_id ?? x.technicianId ?? x.employee_id ?? x.employeeId ?? x.user_id ?? '') : String(x ?? '');
+        var label = obj ? (x.name || x.technician_name || x.technicianName || x.employee_name || x.display_name || [x.first_name,x.last_name].filter(Boolean).join(' ') || '') : String(x ?? '');
+        var key = String(id || label).trim();
+        return key ? {key:key,label:String(label || id).trim()} : null;
+      }).filter(function(t){if(!t || seen[t.key])return false; seen[t.key]=true;return true;});
+    }
+    function matchingTech(r) {
+      if (techFilter === 'all') return true;
+      var a=techniciansFor(r);
+      return techFilter === 'unassigned' ? !a.length : a.some(function(t){return t.key===techFilter;});
+    }
+    function refreshTechOptions() {
+      var by=new Map();
+      rows.concat(undated).forEach(function(r) {
+        techniciansFor(r).forEach(function(t){by.set(t.key,t.label);});
+      });
+      technicianOptions=Array.from(by,function(e){return {key:e[0],label:e[1]};}).sort(function(a,b){return a.label.localeCompare(b.label);});
+    }
 
     var view = 'day';
     var anchor = addDays(new Date(), 1);   // tomorrow until the data says otherwise
@@ -640,6 +666,14 @@
           '<button data-step="1" aria-label="Next">&#8250;</button>' +
           '<button class="today" data-today>Tomorrow</button>' +
         '</div></div>');
+      h.push('<div style="display:flex;align-items:center;gap:10px;margin:10px 0 14px;flex-wrap:wrap">' +
+        '<label for="cc-tech-filter" style="font-weight:700;font-size:12px;color:#5F6E7B">Technician</label>' +
+        '<select id="cc-tech-filter" aria-label="Filter mailing schedule by technician" style="min-width:210px;max-width:100%;padding:9px 12px;border:1px solid #d4dfe7;border-radius:9px;background:white;color:#24313D">' +
+        '<option value="all"' + (techFilter==='all' ? ' selected' : '') + '>All technicians</option>' +
+        '<option value="unassigned"' + (techFilter==='unassigned' ? ' selected' : '') + '>Unassigned</option>' +
+        technicianOptions.map(function(t){return '<option value="' + esc(t.key) + '"' + (techFilter===t.key ? ' selected' : '') + '>' + esc(t.label) + '</option>';}).join('') +
+        (techFilter!=='all' && techFilter!=='unassigned' && !technicianOptions.some(function(t){return t.key===techFilter;}) ? '<option value="' + esc(techFilter) + '" selected>Selected technician (no jobs this period)</option>' : '') +
+        '</select></div>');
       return h.join('');
     }
 
@@ -655,7 +689,7 @@
       return '<div class="cc-stop' + (st.on && !lock ? '' : ' off') + '">' +
         '<div class="pin">' + n + '</div>' +
         '<div class="info"><div class="addr">' + esc(r.service_address || r.batch_id) + '</div>' +
-        '<div class="meta">' + meta + '</div></div>' +
+        '<div class="meta">' + meta + ' · ' + (techniciansFor(r).length ? 'Tech: ' + esc(techniciansFor(r).map(function(t){return t.label;}).join(', ')) : 'Unassigned') + '</div></div>' +
         '<div class="cc-step">' +
           '<button data-dec="' + esc(r.batch_id) + '"' + (lock || !st.on || st.cards <= 0 ? ' disabled' : '') + ' aria-label="Fewer cards">&#8722;</button>' +
           '<div class="v">' + (lock ? (r.approved_cards != null ? r.approved_cards : st.cards) : st.cards) + '</div>' +
@@ -738,8 +772,9 @@
     }
 
     function render() {
-      var list = rows.slice();
-      var all = list.concat(undated);
+      var list = rows.filter(matchingTech);
+      var matchingUndated = undated.filter(matchingTech);
+      var all = list.concat(matchingUndated);
 
       if (!all.length && hideWhenEmpty && view === 'day' && !anchored) {
         root.innerHTML = ''; root.style.display = 'none'; return;
@@ -787,10 +822,10 @@
         // Rows with no service date cannot be scheduled into any view, but
         // they are still queued and will still mail. Surfacing them beats
         // leaving them invisible.
-        if (undated.length) {
+        if (matchingUndated.length) {
           html.push('<div class="cc-hood"><div class="cc-hood-head"><div><h3>No service date</h3>' +
-            '<div class="m">' + undated.length + ' queued before scheduling was switched on</div></div></div>');
-          undated.forEach(function (r) { html.push(stopHtml(r, counter())); });
+            '<div class="m">' + matchingUndated.length + ' queued before scheduling was switched on</div></div></div>');
+          matchingUndated.forEach(function (r) { html.push(stopHtml(r, counter())); });
           html.push('</div>');
         }
       }
@@ -829,6 +864,8 @@
     }
 
     function wire() {
+      var selectedTech = root.querySelector('#cc-tech-filter');
+      if (selectedTech) selectedTech.onchange=function(){techFilter=this.value;render();};
       root.querySelectorAll('[data-view]').forEach(function (b) {
         b.onclick = function () {
           if (view === b.dataset.view) return;
@@ -873,7 +910,7 @@
       root.querySelectorAll('[data-hood]').forEach(function (c) {
         c.onchange = function () {
           var hood = c.dataset.hood;
-          rows.filter(function (r) { return (r.neighborhood || 'Unsorted') === hood && !locked(r); })
+          rows.filter(function (r) { return matchingTech(r) && (r.neighborhood || 'Unsorted') === hood && !locked(r); })
               .forEach(function (r) { var st = stateFor(r); st.on = c.checked; st.dirty = true; });
           render();
         };
@@ -896,7 +933,7 @@
 
       var pts = [];
       var i = 0;
-      var by = groupBy(rows, function (r) { return r.neighborhood || 'Unsorted'; });
+      var by = groupBy(rows.filter(matchingTech), function (r) { return r.neighborhood || 'Unsorted'; });
       Object.keys(by).forEach(function (hood) {
         by[hood].forEach(function (r) {
           i++;
@@ -966,7 +1003,7 @@
     }
 
     var COLS = 'batch_id, location_id, neighborhood, service_address, service_date, completed_at, ' +
-               'proposed_cards, approved_cards, status, review_deadline, lat, lng';
+               'proposed_cards, approved_cards, status, review_deadline, lat, lng, assigned_technicians';
 
     async function load() {
       if (loading) return;
@@ -994,6 +1031,7 @@
         undated = (ur && ur.data) || [];
 
         edits = {};
+        refreshTechOptions();
 
         // First paint: if the default day is empty, jump to the next day that
         // has work rather than opening on nothing.
