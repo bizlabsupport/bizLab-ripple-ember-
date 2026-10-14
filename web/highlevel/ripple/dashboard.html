@@ -408,6 +408,33 @@
     <!-- Control Center: what is about to mail. Hidden entirely on a quiet day. -->
     <section id="ripple-control-center" style="display:none"></section>
 
+    <!-- Ripple prepaid wallet; this section never collects credit card data. -->
+    <section id="ripple-wallet" aria-label="Ripple billing" style="background:#fff;border:1px solid #e0e5e8;border-radius:16px;padding:24px;margin:0 0 22px;display:none">
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:start;flex-wrap:wrap">
+        <div><h2 style="font-size:20px;margin:0 0 6px">Ripple Wallet</h2><p style="color:#5F6E7B;font-size:13px;margin:0">Track your prepaid balance and request additional credits.</p></div>
+        <div style="text-align:right"><div style="font-size:12px;color:#5F6E7B">Available balance</div><div id="rw-balance" style="font-weight:800;font-size:28px">$—</div></div>
+      </div>
+      <div id="rw-alert" role="status" style="margin-top:12px;font-size:13px;color:#8A1044"></div>
+      <div id="rw-form" style="margin-top:16px">
+        <label for="rw-amount" style="font-size:13px;font-weight:700;display:block;margin-bottom:6px">Amount to add (USD)</label>
+        <select id="rw-amount" style="padding:12px;border:1px solid #d1d9e0;border-radius:9px;width:100%;max-width:340px">
+          <option value="2500">$25.00</option><option value="5000">$50.00</option><option value="10000">$100.00</option><option value="25000">$250.00</option><option value="custom">Custom amount</option>
+        </select>
+        <input id="rw-custom" type="number" min="10" max="5000" step="0.01" placeholder="Custom amount, $10–$5,000" style="display:none;margin-top:8px;padding:12px;border:1px solid #d1d9e0;border-radius:9px;width:100%;max-width:340px">
+        <p style="font-size:12px;color:#5F6E7B;margin:8px 0 12px">Checkout is not active yet. Requests do not charge your saved card or add credits.</p>
+        <button type="button" id="rw-submit" style="background:#B01657;color:white;border:0;padding:12px 22px;border-radius:9px;cursor:pointer;font-weight:700">Request Credits</button>
+        <div id="rw-message" role="status" style="font-size:13px;margin-top:10px"></div>
+      </div>
+      <div style="margin-top:20px">
+        <h3 style="font-size:15px;margin:0 0 8px">Recent wallet transactions</h3>
+        <div id="rw-transactions" style="font-size:13px;color:#5F6E7B">Loading wallet…</div>
+      </div>
+      <div style="margin-top:15px">
+        <h3 style="font-size:15px;margin:0 0 8px">Top-up requests</h3>
+        <div id="rw-requests" style="font-size:13px;color:#5F6E7B">Loading…</div>
+      </div>
+    </section>
+
     <!-- HERO: the Monday Report receipt -->
     <section class="receipt-wrap" aria-label="Monday report">
       <div class="receipt">
@@ -1107,6 +1134,53 @@
     } catch (e) {
       console.error("control center failed to mount", e);
     }
+
+    // Wallet requests are strictly scoped on the server to the logged-in user.
+    (async function mountRippleWallet() {
+      const root=document.getElementById("ripple-wallet");
+      const $=(id)=>document.getElementById(id);
+      const money=(c)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(c||0)/100);
+      const e=(v)=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+      const rpc=async(action,extra={})=>{
+        const {data:{session:current}}=await sb.auth.getSession();
+        if(!current)throw Error("Your session expired. Please sign in again.");
+        const res=await fetch(SUPABASE_URL+"/functions/v1/ripple-wallet",{method:"POST",headers:{
+          "Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+current.access_token
+        },body:JSON.stringify({action,locationId:tenant.slug,...extra})});
+        const result=await res.json();
+        if(!res.ok)throw Error(result.error||"Wallet service unavailable");
+        return result;
+      };
+      async function load(){
+        try{
+          const w=await rpc("overview");
+          root.style.display="";
+          $("rw-balance").textContent=money(w.balanceCents);
+          $("rw-alert").textContent=w.balanceCents<=w.lowBalanceAlertCents?"Balance is low. New mailings may require additional credits.":"";
+          $("rw-form").style.display=w.betaEnabled?"":"none";
+          if(w.betaEnabled&&!w.billingContactConfigured){
+            $("rw-submit").disabled=true;
+            $("rw-message").textContent="Billing Contact ID must be set by your Ripple administrator.";
+          }
+          $("rw-transactions").innerHTML=w.transactions?.length ? w.transactions.map(x=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eee"><span>'+e(x.description||x.kind)+' <small>'+e(new Date(x.created_at).toLocaleDateString())+'</small></span><strong>'+e(money(x.amount_cents))+'</strong></div>').join(""):"No wallet transactions yet.";
+          $("rw-requests").innerHTML=w.topupRequests?.length ? w.topupRequests.map(x=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eee"><span>'+e(new Date(x.created_at).toLocaleDateString())+' · '+e(x.status.replace(/_/g," "))+'</span><strong>'+e(money(x.amount_cents))+'</strong></div>').join(""):"No top-up requests yet.";
+        }catch(err){root.style.display="";$("rw-transactions").textContent="Unable to load wallet: "+err.message;$("rw-requests").textContent="";}
+      }
+      $("rw-amount").addEventListener("change",()=>{
+        $("rw-custom").style.display=$("rw-amount").value==="custom"?"block":"none";
+      });
+      $("rw-submit").addEventListener("click",async()=>{
+        const v=$("rw-amount").value;
+        const cents=v==="custom"?Math.round(Number($("rw-custom").value)*100):Number(v);
+        if(!Number.isSafeInteger(cents)||cents<1000||cents>500000){$("rw-message").textContent="Enter an amount between $10 and $5,000.";return;}
+        if(!confirm("Submit a request for "+money(cents)+"? This will NOT charge your card."))return;
+        $("rw-submit").disabled=true;
+        try{const result=await rpc("request_topup",{amountCents:cents});$("rw-message").textContent=result.message;await load();}
+        catch(err){$("rw-message").textContent=err.message;}
+        finally{$("rw-submit").disabled=false;}
+      });
+      await load();
+    })();
 
     // 5. Load the funnel for the last 7 days via the funnel_summary RPC.
     //    RLS scopes it to this location automatically.
