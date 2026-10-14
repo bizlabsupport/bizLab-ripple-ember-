@@ -366,6 +366,26 @@
 
     <div class="stats" id="stats"></div>
 
+    <!-- Super Admin Ripple wallet balance tracker, read-only. -->
+    <section id="ripple-billing-overview" style="background:#fff;border:1px solid #E3E9EE;border-radius:14px;padding:20px;margin:0 0 22px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap">
+        <div><h2 style="font-size:18px;margin:0 0 5px">Ripple Balance Tracker</h2>
+        <p style="font-size:12px;color:#5F6E7B;margin:0">Current wallet balances from Supabase. No real-money top-ups or usage debits are processed by this page.</p></div>
+        <button class="btn ghost sm" type="button" id="wallet-admin-refresh">Refresh balances</button>
+      </div>
+      <div id="wallet-admin-summary" style="display:flex;gap:24px;flex-wrap:wrap;margin:18px 0;font-size:14px;color:#24313D">Loading wallet balances…</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;text-align:left;font-size:13px;min-width:650px">
+          <thead><tr style="color:#5F6E7B;border-bottom:1px solid #E3E9EE">
+            <th style="padding:10px 8px">Location</th><th style="padding:10px 8px">Wallet balance</th>
+            <th style="padding:10px 8px">Beta</th><th style="padding:10px 8px">Billing contact</th>
+            <th style="padding:10px 8px">Balance status</th><th style="padding:10px 8px"></th>
+          </tr></thead><tbody id="wallet-admin-rows"><tr><td colspan="6" style="padding:12px">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <p id="wallet-admin-note" style="color:#6F7885;font-size:12px;margin:12px 0 0">Balances reflect recorded ledger entries only. Payment verification and usage deductions are still pending.</p>
+    </section>
+
     <div class="controls">
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -542,7 +562,7 @@ let emberStatusFilter = "all";
   document.getElementById("app").classList.remove("hidden");
 
   await loadTenants();
-  await Promise.all([loadPlatform(), loadEmber()]);
+  await Promise.all([loadPlatform(), loadEmber(), loadBillingOverview()]);
   render();
 })();
 
@@ -642,6 +662,58 @@ async function loadEmber() {
     EMBER_LOCATIONS = [];
   }
   renderEmber();
+}
+
+// -- Ripple Super Admin balance tracker (read-only) ------------------------
+let BILLING_ROWS = [];
+const walletMoney = (c) => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(c||0)/100);
+async function loadBillingOverview() {
+  const rows = document.getElementById("wallet-admin-rows");
+  try {
+    const result = await adminOp("billingOverview", {});
+    BILLING_ROWS = result.locations || [];
+    const balance = BILLING_ROWS.reduce((sum,l)=>sum+Number(l.balance_cents||0),0);
+    const beta = BILLING_ROWS.filter(l=>l.beta_billing_enabled).length;
+    const low = BILLING_ROWS.filter(l=>l.beta_billing_enabled && Number(l.balance_cents||0)<=Number(l.low_balance_alert_cents||0)).length;
+    document.getElementById("wallet-admin-summary").innerHTML =
+      '<div><b style="font-size:22px">'+walletMoney(balance)+'</b><div style="font-size:11px;color:#5F6E7B">Total recorded balances</div></div>' +
+      '<div><b style="font-size:22px">'+beta+'</b><div style="font-size:11px;color:#5F6E7B">Beta accounts enabled</div></div>' +
+      '<div><b style="font-size:22px">'+low+'</b><div style="font-size:11px;color:#5F6E7B">Beta accounts at/below threshold</div></div>';
+    rows.innerHTML = BILLING_ROWS.length ? BILLING_ROWS.map(l=>{
+      const cents=Number(l.balance_cents||0);
+      const active=!!l.beta_billing_enabled;
+      const status = !active?'Not beta':cents<=0?'No funds':cents<=Number(l.low_balance_alert_cents||0)?'Low balance':'Funded';
+      return '<tr style="border-bottom:1px solid #E3E9EE">' +
+        '<td style="padding:10px 8px"><strong>'+esc(l.client_name||l.location_id)+'</strong><div style="color:#6F7885;font-size:11px">'+esc(l.location_id)+'</div></td>'+
+        '<td style="padding:10px 8px;font-weight:800">'+walletMoney(cents)+'</td>'+
+        '<td style="padding:10px 8px">'+(active?'Enabled':'Off')+'</td>'+
+        '<td style="padding:10px 8px">'+(l.billing_contact_configured?'Configured':'Missing')+'</td>'+
+        '<td style="padding:10px 8px">'+status+'</td>'+
+        '<td style="padding:10px 8px"><button type="button" class="btn ghost sm" data-wallet-details="'+esc(l.location_id)+'">Transactions</button></td></tr>';
+    }).join('') : '<tr><td colspan="6" style="padding:12px">No locations.</td></tr>';
+    document.getElementById("wallet-admin-note").textContent=result.note||'Balances reflect recorded ledger entries only.';
+  }catch(err){
+    rows.innerHTML='<tr><td colspan="6" style="padding:12px;color:#B01657">Unable to load wallet balances: '+esc(err.message)+'</td></tr>';
+  }
+}
+async function showBillingDetails(id) {
+  try {
+    const r=await adminOp("billingOverview",{locationId:id});
+    const l=r.location, entries=r.transactions||[], requests=r.topupRequests||[];
+    openModal('<div class="modal-head"><div><div class="t">'+esc(l.client_name||id)+'</div><div class="s">Ripple wallet transaction history</div></div>'+closeX+'</div>'+
+      '<div class="modal-body" style="max-height:65vh;overflow-y:auto">'+
+      '<div style="font-size:28px;font-weight:800">'+walletMoney(l.balance_cents)+'</div>'+
+      '<p style="font-size:12px;color:#5F6E7B">Current recorded balance · '+(l.beta_billing_enabled?'Beta enabled':'Beta disabled')+'</p>'+
+      '<h3 style="font-size:14px;margin:20px 0 10px">Credits and usage</h3>'+
+      (entries.length ? entries.map(t=>'<div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #E3E9EE;padding:10px 0">'+
+        '<div><strong>'+esc(t.description||t.kind)+'</strong><div style="font-size:11px;color:#5F6E7B">'+esc(new Date(t.created_at).toLocaleString())+' · '+esc(t.kind)+'</div></div>'+
+        '<strong>'+walletMoney(t.amount_cents)+'</strong></div>').join('') : '<p style="color:#5F6E7B;font-size:13px">No wallet ledger entries yet.</p>')+
+      '<h3 style="font-size:14px;margin:20px 0 10px">Top-up requests</h3>'+
+      (requests.length ? requests.map(t=>'<div style="display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #E3E9EE">'+
+        '<span>'+esc(new Date(t.created_at).toLocaleString())+' · '+esc(t.status)+'</span><strong>'+walletMoney(t.amount_cents)+'</strong></div>').join('') :
+        '<p style="color:#5F6E7B;font-size:13px">No top-up requests yet.</p>')+
+      '<p style="font-size:12px;color:#5F6E7B;margin-top:16px">Read-only. Payment verification and automatic postcard usage debits are not live yet.</p></div>',720);
+  }catch(err){toast('Could not load wallet transactions: '+err.message);}
 }
 
 // -- Rendering --
@@ -1941,6 +2013,9 @@ function modalEmberManage(id) {
 
 // -- Event delegation --
 document.addEventListener("click", (e) => {
+  const walletDetails = e.target.closest("[data-wallet-details]");
+  if (walletDetails) { showBillingDetails(walletDetails.dataset.walletDetails); return; }
+  if (e.target.closest("#wallet-admin-refresh")) { loadBillingOverview(); return; }
   // close modal
   if (e.target.closest("[data-close]") || e.target.matches("[data-scrim]")) { closeModal(); return; }
 
