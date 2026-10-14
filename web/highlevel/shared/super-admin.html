@@ -588,6 +588,11 @@ async function loadTenants() {
     calendarId: l.ghl_calendar_id || "",
     bookingUrl: l.booking_url || "",
     subaccountId: l.thanksio_subaccount_id || "",
+    postcardMode: l.postcard_mode || "legacy",
+    postcardBrandKey: l.postcard_brand_key || "",
+    postcardCreativeId: l.postcard_creative_id || "",
+    postcardImageTemplateId: l.postcard_image_template_id || "",
+    postcardMessageTemplateId: l.postcard_message_template_id || "",
     stats: { sent: 0, scanned: 0, claimed: 0, redeemed: 0, value: 0 },
     teamCounts: l.teamCounts || { admin: 0, viewer: 0 },
     users: [],
@@ -1192,6 +1197,43 @@ function modalWorkspace(id, startSect) {
       <div class="err hidden" id="d-sub-err"></div>
     </label>
 
+    <div class="sect spaced">Postcard design</div>
+    <p class="paneintro">Each Ripple location can use its own saved Thanks.io Creative, separate templates, or a brand default. Existing mailings remain on their previous design until a new mode is selected.</p>
+    <label class="field">
+      <span class="lbl">Sending method</span>
+      <select id="d-postcard-mode">
+        <option value="legacy" ${t.postcardMode === "legacy" ? "selected" : ""}>Existing setup (unchanged)</option>
+        <option value="brand_default" ${t.postcardMode === "brand_default" ? "selected" : ""}>Use brand default</option>
+        <option value="creative" ${t.postcardMode === "creative" ? "selected" : ""}>Use location Creative ID</option>
+        <option value="templates" ${t.postcardMode === "templates" ? "selected" : ""}>Use location image + message templates</option>
+      </select>
+    </label>
+    <div id="d-postcard-brand-wrap">
+      <label class="field">
+        <span class="lbl">Brand default key</span>
+        <input id="d-postcard-brand" value="${esc(t.postcardBrandKey)}" placeholder="ma_pa" autocomplete="off">
+        <div class="hint">Use ma_pa for the Mosquito & Pest Authority default (Creative 399995). Other white-label brands need their own brand default configured first. No universal fallback is used.</div>
+      </label>
+    </div>
+    <div id="d-postcard-creative-wrap">
+      <label class="field">
+        <span class="lbl">Location Creative ID</span>
+        <input id="d-postcard-creative" type="text" inputmode="numeric" value="${esc(t.postcardCreativeId)}" placeholder="e.g. 399995">
+      </label>
+    </div>
+    <div id="d-postcard-templates-wrap" class="row2">
+      <label class="field">
+        <span class="lbl">Image Template ID</span>
+        <input id="d-postcard-image" type="text" inputmode="numeric" value="${esc(t.postcardImageTemplateId)}" placeholder="e.g. 425257">
+      </label>
+      <label class="field">
+        <span class="lbl">Message Template ID</span>
+        <input id="d-postcard-message" type="text" inputmode="numeric" value="${esc(t.postcardMessageTemplateId)}" placeholder="e.g. 668546">
+      </label>
+    </div>
+    <div class="err hidden" id="d-postcard-err"></div>
+    <div class="hint">Creative sends use the saved front and message together. Ripple preserves the unique signed QR URL on every postcard.</div>
+
     <div class="sect spaced">This client's rates</div>
     <p class="paneintro">Leave blank to use the platform base price. The rate is stamped on each card as it sends, so a change here never re-prices cards already in the ground.</p>
     <div class="row2">
@@ -1290,6 +1332,16 @@ function modalWorkspace(id, startSect) {
   $("ws-nav").addEventListener("click", (e) => {
     const b = e.target.closest("[data-sect]"); if (b) goto(b.dataset.sect);
   });
+
+  // Show only the controls needed for the selected design mode.
+  function paintPostcardMode() {
+    const mode = $("d-postcard-mode").value;
+    $("d-postcard-brand-wrap").style.display = mode === "brand_default" ? "" : "none";
+    $("d-postcard-creative-wrap").style.display = mode === "creative" ? "" : "none";
+    $("d-postcard-templates-wrap").style.display = mode === "templates" ? "" : "none";
+  }
+  $("d-postcard-mode").addEventListener("change", paintPostcardMode);
+  paintPostcardMode();
 
   // -- Dirty tracking, so the footer can say what is unsaved and the nav can
   // flag which section it is in.
@@ -1588,13 +1640,22 @@ function modalWorkspace(id, startSect) {
     const accent = $("d-accent").value.trim();
     const pCard = $("d-price-card").value.trim();
     const pLookup = $("d-price-lookup").value.trim();
+    const pcMode = $("d-postcard-mode").value;
+    const pcBrand = $("d-postcard-brand").value.trim();
+    const pcCreative = $("d-postcard-creative").value.trim();
+    const pcImage = $("d-postcard-image").value.trim();
+    const pcMessage = $("d-postcard-message").value.trim();
 
-    ["d-landing-err", "d-sub-err", "d-cal-err", "d-bookpage-err", "d-theme-err", "d-price-err", "prize-err"]
+    ["d-postcard-err", "d-landing-err", "d-sub-err", "d-cal-err", "d-bookpage-err", "d-theme-err", "d-price-err", "prize-err"]
       .forEach((i) => clear($(i)));
     ["d-landing", "d-sub", "m-name", "d-bookpage", "d-accent", "d-price-card", "d-price-lookup"]
       .forEach((i) => $(i).classList.remove("bad"));
 
     if (!name) return fail("general", "m-name", null, "The franchise name cannot be empty.");
+    const isPositiveId = (v) => /^\\d+$/.test(v) && Number.isSafeInteger(Number(v)) && Number(v)>0;
+    if (pcMode === "brand_default" && !pcBrand) return fail("mail", "d-postcard-brand", "d-postcard-err", "Enter a configured brand key.");
+    if (pcMode === "creative" && !isPositiveId(pcCreative)) return fail("mail", "d-postcard-creative", "d-postcard-err", "Enter a valid Creative ID.");
+    if (pcMode === "templates" && (!isPositiveId(pcImage) || !isPositiveId(pcMessage))) return fail("mail", "d-postcard-image", "d-postcard-err", "Both template IDs are required.");
     if (landing && !isUrl(landing)) return fail("landing", "d-landing", "d-landing-err",
       "Enter a full address starting with https://, or leave it blank to use the default.");
     if (booking && !isUrl(booking)) return fail("highlevel", null, "d-cal-err",
@@ -1661,6 +1722,11 @@ function modalWorkspace(id, startSect) {
           ghl_calendar_id: cal || null,
           booking_url: booking || null,
           thanksio_subaccount_id: sub || null,
+          postcard_mode: pcMode,
+          postcard_brand_key: pcBrand || null,
+          postcard_creative_id: pcCreative || null,
+          postcard_image_template_id: pcImage || null,
+          postcard_message_template_id: pcMessage || null,
           booking_page_url: bookPage || null,
           price_per_card_cents: pCard ? strToCents(pCard) : null,
           price_per_lookup_cents: pLookup ? strToCents(pLookup) : null,
@@ -1678,6 +1744,9 @@ function modalWorkspace(id, startSect) {
 
       t.name = name; t.landingUrl = landing; t.calendarId = cal; t.bookingUrl = booking;
       t.subaccountId = sub; t.bookingPageUrl = bookPage;
+      t.postcardMode = pcMode; t.postcardBrandKey = pcBrand;
+      t.postcardCreativeId = pcCreative; t.postcardImageTemplateId = pcImage;
+      t.postcardMessageTemplateId = pcMessage;
       t.theme = nextTheme; t.ghlFields = nextFields;
       t.priceCard = pCard ? strToCents(pCard) : null;
       t.priceLookup = pLookup ? strToCents(pLookup) : null;
@@ -1686,7 +1755,8 @@ function modalWorkspace(id, startSect) {
       render();
       toast("Settings saved.");
     } catch (e) {
-      if (e.field === "thanksio_subaccount_id") fail("mail", "d-sub", "d-sub-err", e.message);
+      if (String(e.field || "").startsWith("postcard_")) fail("mail", null, "d-postcard-err", e.message);
+      else if (e.field === "thanksio_subaccount_id") fail("mail", "d-sub", "d-sub-err", e.message);
       else if (e.field === "landing_url") fail("landing", "d-landing", "d-landing-err", e.message);
       else if (e.field === "ghl_calendar_id") fail("highlevel", null, "d-cal-err", e.message);
       else toast("Save failed: " + e.message);
