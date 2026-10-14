@@ -1652,7 +1652,7 @@ function modalWorkspace(id, startSect) {
       .forEach((i) => $(i).classList.remove("bad"));
 
     if (!name) return fail("general", "m-name", null, "The franchise name cannot be empty.");
-    const isPositiveId = (v) => /^\\d+$/.test(v) && Number.isSafeInteger(Number(v)) && Number(v)>0;
+    const isPositiveId = (v) => /^\d+$/.test(v) && Number.isSafeInteger(Number(v)) && Number(v)>0;
     if (pcMode === "brand_default" && !pcBrand) return fail("mail", "d-postcard-brand", "d-postcard-err", "Enter a configured brand key.");
     if (pcMode === "creative" && !isPositiveId(pcCreative)) return fail("mail", "d-postcard-creative", "d-postcard-err", "Enter a valid Creative ID.");
     if (pcMode === "templates" && (!isPositiveId(pcImage) || !isPositiveId(pcMessage))) return fail("mail", "d-postcard-image", "d-postcard-err", "Both template IDs are required.");
