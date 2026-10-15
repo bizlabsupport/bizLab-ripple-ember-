@@ -1,4 +1,4 @@
-<!-- Ripple booking page. Paste into a HighLevel custom-code element.
+<!-- Ripple booking page. Paste into a Location custom-code element.
      Deliberately a FRAGMENT, not a document: a nested <html>/<body> is
      discarded by the parser while its CSS still applies, which is how
      body{display:flex} ended up restyling the whole GHL page. -->
@@ -9,7 +9,7 @@
 
   /* ---------------------------------------------------------------------
      Host containment.
-     This block lives inside a HighLevel custom-code element, and GHL wraps it
+     This block lives inside a Location custom-code element, and GHL wraps it
      in section > row > column > .inner - all flex. A flex item will not shrink
      below its content by default, so the scrolling day row was pushing every
      one of those ancestors wider than the phone, and the page scrolled
@@ -70,7 +70,7 @@
     background: var(--bg); color: var(--ink);
     font-family: 'Barlow', system-ui, sans-serif; }
 
-  /* The host page (HighLevel) sets styles on bare elements, so anything that
+  /* The host page (Location) sets styles on bare elements, so anything that
      matters is restated inside .wrap rather than left to inherit. */
   #ripple-booking * { box-sizing: border-box; }
 
