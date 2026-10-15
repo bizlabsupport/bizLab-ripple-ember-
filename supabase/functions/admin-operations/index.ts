@@ -483,6 +483,62 @@ Deno.serve(async (req: Request) => {
         return json({ locations });
       }
 
+      // ---- Wallet tracker (read-only) and verified manual credit --------
+      case 'billingOverview': {
+        const locId=String(p.locationId||'').trim();
+        const {data:configs,error:configErr}=await admin.from('config')
+          .select('location_id,client_name,beta_billing_enabled,billing_ghl_contact_id,low_balance_alert_cents')
+          .not('location_id','like','company:%');
+        if(configErr)throw configErr;
+        const {data:balances,error:balanceErr}=await admin.from('billing_balances')
+          .select('location_id,balance_cents');
+        if(balanceErr)throw balanceErr;
+        const byId=new Map((balances||[]).map((b:any)=>[b.location_id,b]));
+        const locations=(configs||[]).map((cfg:any)=>({
+          location_id:cfg.location_id,client_name:cfg.client_name,
+          beta_billing_enabled:cfg.beta_billing_enabled===true,
+          billing_contact_configured:!!cfg.billing_ghl_contact_id,
+          low_balance_alert_cents:Number(cfg.low_balance_alert_cents??5000),
+          balance_cents:Number((byId.get(cfg.location_id) as any)?.balance_cents??0)
+        }));
+        if(!locId){
+          return json({locations,note:'Balances reflect recorded ledger entries only. Payment verification and usage deductions are not processed by this page.'});
+        }
+        const location=locations.find((x:any)=>x.location_id===locId);
+        if(!location)return json({error:'Unknown Ripple location'},404);
+        const [{data:transactions,error:ledgerErr},{data:topupRequests,error:requestsErr}]=await Promise.all([
+          admin.from('billing_ledger').select('id,kind,amount_cents,description,created_at,external_ref')
+            .eq('location_id',locId).order('created_at',{ascending:false}).limit(100),
+          admin.from('ripple_wallet_topup_requests').select('id,status,amount_cents,created_at')
+            .eq('location_id',locId).order('created_at',{ascending:false}).limit(50)
+        ]);
+        if(ledgerErr)throw ledgerErr;
+        if(requestsErr)throw requestsErr;
+        return json({location,transactions:transactions||[],topupRequests:topupRequests||[],
+          note:'Read-only recorded balance and historical entries.'});
+      }
+
+      case 'recordPaidCredit': {
+        if(p.confirmPaymentCollected!==true)
+          return json({error:'Confirm the external payment was successfully collected before recording credit'},400);
+        const locationId=String(p.locationId||'').trim();
+        const amountCents=Number(p.amountCents);
+        const reference=String(p.paymentReference||'').trim();
+        const notes=String(p.notes||'').trim();
+        if(!locationId)return json({error:'Location is required'},400);
+        if(!Number.isInteger(amountCents)||amountCents<100||amountCents>500000)
+          return json({error:'Amount must be between $1 and $5,000'},400);
+        if(reference.length<6||reference.length>200)
+          return json({error:'A valid collected payment reference is required'},400);
+        const {data,error}=await admin.rpc('record_ripple_manual_paid_credit',{
+          p_location_id:locationId,p_amount_cents:amountCents,
+          p_payment_reference:reference,p_notes:notes,p_actor:userData.user.id
+        });
+        if(error)return json({error:error.message,code:error.code},error.code==='23505'?409:400);
+        const row=Array.isArray(data)?data[0]:data;
+        return json({ok:true,ledgerId:row?.ledger_id,balanceCents:row?.balance_cents});
+      }
+
       case 'updateLocation': {
         const { locationId, updates } = p;
         if (!locationId) return json({ error: 'locationId required' }, 400);
