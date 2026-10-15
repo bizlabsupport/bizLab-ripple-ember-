@@ -473,7 +473,7 @@
           <option value="2500">$25.00</option><option value="5000">$50.00</option><option value="10000">$100.00</option><option value="25000">$250.00</option><option value="custom">Custom amount</option>
         </select>
         <input id="rw-custom" type="number" min="10" max="5000" step="0.01" placeholder="Custom amount, $10–$5,000" style="display:none;margin-top:8px;padding:12px;border:1px solid #d1d9e0;border-radius:9px;width:100%;max-width:340px">
-        <p style="font-size:12px;color:#5F6E7B;margin:8px 0 12px">Payments are collected by HighLevel in Test Mode. Wallet crediting is pending payment verification. Check that the form displays the correct details before submitting.</p>
+        <p style="font-size:12px;color:#5F6E7B;margin:8px 0 12px">Payments are collected by Location in Test Mode. Wallet crediting is pending payment verification. Check that the form displays the correct details before submitting.</p>
         <button type="button" id="rw-submit" style="background:#B01657;color:white;border:0;padding:12px 22px;border-radius:9px;cursor:pointer;font-weight:700">Continue to Payment Form (Test)</button>
         <div id="rw-message" role="status" style="font-size:13px;margin-top:10px"></div>
       </div>
@@ -788,7 +788,7 @@
       if (!all.length) {
         html.push('<div class="cc-empty">Nothing scheduled ' +
           (view === 'day' ? 'on this day' : view === 'week' ? 'this week' : 'this month') +
-          '. Streets appear here as soon as an appointment is booked in HighLevel.</div>');
+          '. Streets appear here as soon as an appointment is booked in Location.</div>');
         html.push('</div>');
         root.style.display = '';
         root.innerHTML = html.join('');
@@ -1212,7 +1212,7 @@
         const v=$("rw-amount").value;
         const cents=v==="custom"?Math.round(Number($("rw-custom").value)*100):Number(v);
         if(!Number.isSafeInteger(cents)||cents<1000||cents>500000){$("rw-message").textContent="Enter an amount between $10 and $5,000.";return;}
-        if(!confirm("Open the HighLevel TEST payment form for a "+money(cents)+" top-up request? The payment amount must be selected again on the form, and wallet credits will remain pending verification."))return;
+        if(!confirm("Open the Location TEST payment form for a "+money(cents)+" top-up request? The payment amount must be selected again on the form, and wallet credits will remain pending verification."))return;
         $("rw-submit").disabled=true;
         try{
           const tab=window.open("about:blank","_blank");
@@ -1220,7 +1220,7 @@
           $("rw-message").textContent=result.message;
           if(result.checkoutUrl){
             if(tab){tab.opener=null;tab.location.href=result.checkoutUrl;}
-            else {const link=document.createElement("a");link.href=result.checkoutUrl;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open HighLevel payment form";$("rw-message").append(" ",link);}
+            else {const link=document.createElement("a");link.href=result.checkoutUrl;link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open Location payment form";$("rw-message").append(" ",link);}
           }else if(tab){tab.close();}
           await load();
         }
@@ -1264,7 +1264,7 @@
         .rpc("batches_summary", { p_location_id: tenant.slug, p_limit: 10 });
       const el = document.getElementById("batches-list");
       if (!batches || batches.length === 0) {
-        el.innerHTML = `<div class="empty-state" style="padding:20px 0;color:var(--muted);font-size:13.5px;text-align:center">No batches yet. When a job is marked "Service Completed" in HighLevel, its neighbourhood batch shows up here.</div>`;
+        el.innerHTML = `<div class="empty-state" style="padding:20px 0;color:var(--muted);font-size:13.5px;text-align:center">No batches yet. When a job is marked "Service Completed" in Location, its neighbourhood batch shows up here.</div>`;
       } else {
         const dotClass = (s) => s === "live" ? "d-live" : (s === "queued" ? "d-queued" : "d-done");
         const when = (d) => new Date(d).toLocaleDateString(undefined, { month: "short", day: "numeric" });
