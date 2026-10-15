@@ -380,7 +380,7 @@
 
     <div class="table">
       <div class="thead">
-        <div>Location</div><div>Plan</div><div>HighLevel link</div><div>Ripple value</div><div></div>
+        <div>Location</div><div>Plan</div><div>Location link</div><div>Ripple value</div><div></div>
       </div>
       <div id="rows"></div>
     </div>
@@ -414,7 +414,7 @@
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn ghost sm" type="button" id="boggs-review-refresh">Refresh candidate results</button>
-          <button class="btn ghost sm" type="button" id="boggs-names-export">Export 51 with Thanks.io names</button>
+          <button class="btn ghost sm" type="button" id="boggs-names-export">Export 51 with Mailing Account names</button>
           <button class="btn sm" type="button" id="boggs-review-start">Purchase approved lookups (up to $8.40)</button>
         </div>
       </div>
@@ -437,11 +437,11 @@
         <summary style="font-size:13px;cursor:pointer;font-weight:700">Review eligible and excluded recipient addresses</summary>
         <div id="boggs-review-recipients" style="margin-top:10px;max-height:350px;overflow:auto;font-size:12px;color:#334155">Retrieve search results first.</div>
       </details>
-      <p style="font-size:12px;color:#5F6E7B;margin:12px 0 0">These are estimates using the Ripple billing rates. Searches purchase address data from Thanks.io; no postcard mailing is performed. Results require review before a separate mailing approval.</p>
+      <p style="font-size:12px;color:#5F6E7B;margin:12px 0 0">These are estimates using the Ripple billing rates. Searches purchase address data from Mailing Account; no postcard mailing is performed. Results require review before a separate mailing approval.</p>
       <div style="border-top:1px solid #E3E9EE;margin-top:20px;padding-top:18px">
         <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
           <div><h3 style="font-size:15px;margin:0 0 5px">Matrix Customer Address Scan</h3>
-            <p style="font-size:12px;color:#5F6E7B;margin:0">Scan Boggs' HighLevel contacts without editing them. Matching contact addresses are flagged for review, including leads.</p></div>
+            <p style="font-size:12px;color:#5F6E7B;margin:0">Scan Boggs' Location contacts without editing them. Matching contact addresses are flagged for review, including leads.</p></div>
           <button type="button" class="btn ghost sm" id="matrix-scan-diagnose">Check address fields</button>
           <button type="button" class="btn sm" id="matrix-scan-button">Sync Customer Addresses</button>
         </div>
@@ -551,7 +551,7 @@ async function adminOp(action, payload) {
   return body;
 }
 
-// HighLevel's public booking widget link, derived from the calendar id.
+// Location's public booking widget link, derived from the calendar id.
 const BOOKING_BASE = "https://api.leadconnectorhq.com/widget/booking/";
 
 const PLANS = ["starter", "growth", "enterprise"];
@@ -756,7 +756,7 @@ function boggsReviewRender(result) {
       'Run the searches, then refresh results to display eligible and excluded addresses.';
   const message=document.getElementById("boggs-review-message");
   if(purchased===0)message.textContent="No paid search requests yet. Maximum approved address lookups: 120 at $0.07 ($8.40).";
-  else if(populated<12)message.textContent="Thanks.io searches are processing. Refresh again after a short wait; purchased lookups are never automatically purchased twice.";
+  else if(populated<12)message.textContent="Mailing Account searches are processing. Refresh again after a short wait; purchased lookups are never automatically purchased twice.";
   else message.textContent="Recipient review complete. No postcards have been ordered or mailed. Review the recipient list and projected cost.";
   const button=document.getElementById("boggs-review-start");
   if(button)button.disabled=items.length>0;
@@ -777,13 +777,13 @@ async function boggsReviewLoad(action="results") {
 }
 document.addEventListener("click",e=>{
   if(e.target.closest("#boggs-review-start")){
-    if(!window.confirm("Purchase up to 120 Thanks.io address records across 12 unique streets for Boggs? Maximum estimated Ripple lookup cost is $8.40. NO postcards will be sent."))return;
+    if(!window.confirm("Purchase up to 120 Mailing Account address records across 12 unique streets for Boggs? Maximum estimated Ripple lookup cost is $8.40. NO postcards will be sent."))return;
     boggsReviewLoad("purchase");
   }
   if(e.target.closest("#boggs-review-refresh"))boggsReviewLoad("refresh");
 });
 
-// -- Existing Thanks.io list names: read-only CSV export --------------------
+// -- Existing Mailing Account list names: read-only CSV export --------------------
 async function exportBoggsNames() {
   const button=document.getElementById("boggs-names-export");
   const status=document.getElementById("boggs-review-message");
@@ -791,7 +791,7 @@ async function exportBoggsNames() {
   const byHash=new Map();
   try {
     for(const offset of [0,4,8]){
-      if(status)status.textContent="Looking up recipient names in previously purchased Thanks.io lists… "+offset+"/12";
+      if(status)status.textContent="Looking up recipient names in previously purchased Mailing Account lists… "+offset+"/12";
       const {data:{session}}=await sb.auth.getSession();
       if(!session)throw Error("Your login session has expired.");
       const response=await fetch(SUPABASE_URL+"/functions/v1/ripple-recipient-review",{
@@ -800,7 +800,7 @@ async function exportBoggsNames() {
         body:JSON.stringify({action:"names",offset})
       });
       const data=await response.json().catch(()=>({}));
-      if(!response.ok)throw Error(data.error||"Thanks.io lookup request failed");
+      if(!response.ok)throw Error(data.error||"Mailing Account lookup request failed");
       for(const row of data.matched||[]){
         if(byHash.has(row.addr_hash))throw Error("Duplicate address hash returned; export stopped");
         byHash.set(row.addr_hash,row);
@@ -808,16 +808,16 @@ async function exportBoggsNames() {
     }
     if(byHash.size!==51)throw Error("Expected 51 addresses, received "+byHash.size+"; export stopped");
     const data=[...byHash.values()].sort((a,b)=>(String(a.address)+" "+String(a.postal_code)).localeCompare(String(b.address)+" "+String(b.postal_code)));
-    const headers=["Recipient Name (Thanks.io)","Street Address","City","State","ZIP","Thanks.io List ID","Name Status"];
+    const headers=["Recipient Name (Mailing Account)","Street Address","City","State","ZIP","Mailing Account List ID","Name Status"];
     const csvField=x=>'"'+String(x??"").replace(/"/g,'""')+'"';
-    const csv=[headers,...data.map(x=>[x.name,x.address,x.city||"Scottsdale",x.province||"AZ",x.postal_code,x.mailing_list_id,x.name_available?"Provided by Thanks.io":"Not provided"])].map(row=>row.map(csvField).join(",")).join("\r\n");
+    const csv=[headers,...data.map(x=>[x.name,x.address,x.city||"Scottsdale",x.province||"AZ",x.postal_code,x.mailing_list_id,x.name_available?"Provided by Mailing Account":"Not provided"])].map(row=>row.map(csvField).join(",")).join("\r\n");
     const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a");a.href=url;a.download="Boggs_51_Thanksio_Recipient_Names.csv";
     document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),3000);
     const named=data.filter(x=>x.name_available).length;
-    if(status)status.textContent="CSV exported: 51 eligible addresses. Thanks.io name provided for "+named+"; missing for "+(51-named)+". Names are recipient labels, not independently verified homeowner identities. No postcards sent.";
+    if(status)status.textContent="CSV exported: 51 eligible addresses. Mailing Account name provided for "+named+"; missing for "+(51-named)+". Names are recipient labels, not independently verified homeowner identities. No postcards sent.";
   }catch(error){if(status)status.textContent="Name export unavailable: "+error.message;}
   finally{if(button)button.disabled=false;}
 }
@@ -941,10 +941,10 @@ function openPaidCreditModal(id) {
   openModal(
     '<div class="modal-head"><div><div class="t">Record Paid Wallet Credit</div><div class="s">'+esc(t.client_name||id)+'</div></div>'+closeX+'</div>'+
     '<div class="modal-body" style="max-height:65vh;overflow-y:auto">'+
-    '<div class="info-box">Use this only when you have already collected the credit-card payment outside Ripple. This does not charge the card or independently verify the processor receipt. Confirm the transaction ID and amount in Stripe/HighLevel first.</div>'+
-    '<div class="field"><span class="lbl">HighLevel Location ID</span><input value="'+esc(id)+'" readonly></div>'+
+    '<div class="info-box">Use this only when you have already collected the credit-card payment outside Ripple. This does not charge the card or independently verify the processor receipt. Confirm the transaction ID and amount in Stripe/Location first.</div>'+
+    '<div class="field"><span class="lbl">Location Location ID</span><input value="'+esc(id)+'" readonly></div>'+
     '<label class="field"><span class="lbl">Amount collected (USD)</span><input id="wallet-credit-amount" inputmode="decimal" placeholder="250.00" value="'+esc(defaultAmount)+'"></label>'+
-    '<label class="field"><span class="lbl">Card payment transaction ID / reference</span><input id="wallet-credit-reference" autocomplete="off" placeholder="Enter actual Stripe/HighLevel charge ID"></label>'+
+    '<label class="field"><span class="lbl">Card payment transaction ID / reference</span><input id="wallet-credit-reference" autocomplete="off" placeholder="Enter actual Stripe/Location charge ID"></label>'+
     '<label class="field"><span class="lbl">Description</span><input id="wallet-credit-note" autocomplete="off" value="Initial Ripple Beta Funding"></label>'+
     '<label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;line-height:1.5;margin:15px 0"><input type="checkbox" id="wallet-credit-confirm" style="margin-top:4px;flex:none">I confirm the payment was successfully collected by credit card, the amount and reference match the payment receipt, and this payment has not already been credited.</label>'+
     '<div id="wallet-credit-error" role="alert" style="color:#B01657;font-size:13px;margin-bottom:12px"></div>'+
@@ -1037,7 +1037,7 @@ function renderStats() {
 }
 
 // A location can actually mail only when it has a calendar to book into and a
-// thanks.io sub-account to bill. Landing falls back to the platform default.
+// Mailing Account sub-account to bill. Landing falls back to the platform default.
 function isReady(t) { return !!(t.calendarId && t.subaccountId); }
 
 function readinessChips(t) {
@@ -1118,7 +1118,7 @@ function renderEmber() {
       </div>
       <div>${office}</div>
       <div><span class="pill ${statusTone[l.status] || "neutral"}">${esc(l.status)}</span></div>
-      <div class="tval"><div class="v" style="font-size:13px">${esc(setup)}</div><div class="s">${l.ghlLocationId ? "HighLevel linked" : "HighLevel ID not set"}</div></div>
+      <div class="tval"><div class="v" style="font-size:13px">${esc(setup)}</div><div class="s">${l.ghlLocationId ? "Location linked" : "Location ID not set"}</div></div>
       <div class="rowacts">
         <button class="btn ghost sm" data-ember-open="${esc(l.id)}">Control center</button>
         <button class="btn ember-primary sm" data-ember-manage="${esc(l.id)}">Manage Ember</button>
@@ -1199,18 +1199,18 @@ function fieldPlan(current) {
 // Create
 function modalCreate() {
   openModal(`
-    <div class="modal-head"><div><div class="t">Connect Ripple Location</div><div class="s">Connect a HighLevel sub-account to Ripple via OAuth.</div></div>
+    <div class="modal-head"><div><div class="t">Connect Ripple Location</div><div class="s">Connect a Location sub-account to Ripple via OAuth.</div></div>
       ${closeX}</div>
     <div class="modal-body">
-      <div class="info-box">A Ripple location <strong>is</strong> a HighLevel sub-account. To add one, install the Ripple app on that sub-account - HighLevel walks you through choosing the location and authorizing. When you approve, the location, its tokens, and its config row are created automatically and it appears in this list.</div>
+      <div class="info-box">A Ripple location <strong>is</strong> a Location sub-account. To add one, install the Ripple app on that sub-account - Location walks you through choosing the location and authorizing. When you approve, the location, its tokens, and its config row are created automatically and it appears in this list.</div>
       <ol style="font-size:13.5px;color:var(--muted);line-height:1.7;margin:14px 0 18px;padding-left:20px">
-        <li>Click <strong>Open HighLevel install</strong> below.</li>
+        <li>Click <strong>Open Location install</strong> below.</li>
         <li>Choose the sub-account to connect and approve the permissions.</li>
         <li>You'll return to Ripple; the new location shows here within a few seconds.</li>
       </ol>
       <div class="actions">
         <button class="btn ghost" data-close>Cancel</button>
-        <button class="btn primary" id="c-install"><svg viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Open HighLevel install</button>
+        <button class="btn primary" id="c-install"><svg viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Open Location install</button>
       </div>
       <div id="c-install-status"></div>
     </div>`);
@@ -1231,7 +1231,7 @@ function modalCreate() {
       document.getElementById("c-install-status").innerHTML =
         `<div class="info-box" style="margin-top:12px;background:var(--coral-wash);border-color:var(--coral)">Couldn't start install: ${esc(e.message)}</div>`;
       btn.disabled = false;
-      btn.innerHTML = 'Open HighLevel install';
+      btn.innerHTML = 'Open Location install';
     }
   };
 }
@@ -1393,7 +1393,7 @@ function modalWorkspace(id, startSect) {
   const SECTIONS = [
     { k: "general",   label: "General",     grp: "Account",
       icon: ico('<path d="M3 21h18M5 21V7l7-4 7 4v14" stroke="currentColor" stroke-width="1.8"/>') },
-    { k: "highlevel", label: "HighLevel",   grp: "",
+    { k: "highlevel", label: "Location",   grp: "",
       icon: ico('<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>') },
     { k: "landing",   label: "Landing page", grp: "The card",
       icon: ico('<path d="M3 7l9 6 9-6M3 7v10h18V7M3 7l9-4 9 4" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>') },
@@ -1423,9 +1423,9 @@ function modalWorkspace(id, startSect) {
     </label>
     <div class="row2">
       <label class="field">
-        <span class="lbl">HighLevel location ID</span>
+        <span class="lbl">Location location ID</span>
         <input value="${esc(t.id)}" readonly>
-        <div class="hint">A Ripple location is a HighLevel sub-account. This is set at install and never changes.</div>
+        <div class="hint">A Ripple location is a Location sub-account. This is set at install and never changes.</div>
       </label>
       <div class="field">
         <span class="lbl">Plan</span>
@@ -1442,7 +1442,7 @@ function modalWorkspace(id, startSect) {
     <div id="ws-ghl-status"></div>
     <div class="sect spaced">Booking calendar</div>
     <label class="field">
-      <span class="lbl">HighLevel calendar</span>
+      <span class="lbl">Location calendar</span>
       <div class="inline">
         <select id="d-calendar">${calOpts}</select>
         <button class="btn ghost sm" id="d-load" type="button">
@@ -1463,7 +1463,7 @@ function modalWorkspace(id, startSect) {
     </label>
 
     <div class="sect spaced">Custom fields</div>
-    <p class="paneintro">Paste the field IDs from HighLevel (Settings, then Custom Fields). Leave one blank and the value still goes out as a tag and in the contact note.</p>
+    <p class="paneintro">Paste the field IDs from Location (Settings, then Custom Fields). Leave one blank and the value still goes out as a tag and in the contact note.</p>
     <div class="row2">
       <label class="field"><span class="lbl">ripple_source_job</span><input id="d-f-job" value="${esc(gf.source_job || "")}" placeholder="field id" autocomplete="off"></label>
       <label class="field"><span class="lbl">ripple_prize_code</span><input id="d-f-code" value="${esc(gf.prize_code || "")}" placeholder="field id" autocomplete="off"></label>
@@ -1520,6 +1520,21 @@ function modalWorkspace(id, startSect) {
     <div style="margin-top:14px;font-size:12.5px;color:var(--muted)" id="prize-total"></div>`;
 
   const paneLook = `
+    <div class="sect">Scratch-card landing logo</div>
+    <p class="paneintro">Upload the logo for this location's scratch-card landing page. PNG, JPEG, or WebP; maximum 2 MB. Logo changes apply immediately and do not require Save settings.</p>
+    <div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;margin:14px 0">
+      <div style="border:1px dashed var(--line);border-radius:12px;min-height:92px;min-width:170px;background:#fff;padding:12px;display:grid;place-items:center">
+        <img id="d-logo-preview" alt="Location logo" style="display:none;max-width:210px;max-height:92px;object-fit:contain">
+        <span id="d-logo-empty" style="color:var(--muted);font-size:12px">No logo uploaded</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label for="d-logo-file" class="btn ghost sm" style="cursor:pointer">Upload logo</label>
+        <input type="file" id="d-logo-file" accept="image/png,image/jpeg,image/webp" style="position:absolute;width:1px;height:1px;opacity:0">
+        <button class="btn ghost sm" type="button" id="d-logo-remove" style="display:none">Remove logo</button>
+      </div>
+    </div>
+    <p id="d-logo-status" role="status" style="font-size:12px;color:var(--muted);margin-bottom:20px"></p>
+    <div class="sect spaced">Scratch-card appearance</div>
     <p class="paneintro">One page serves every client, themed from here. The theme changes how the page looks; it never changes what it does - claim limits, caps and consent wording stay server side.</p>
     <div class="row2">
       <label class="field">
@@ -1547,16 +1562,16 @@ function modalWorkspace(id, startSect) {
     </label>`;
 
   const paneMail = `
-    <div class="sect">thanks.io</div>
+    <div class="sect">Mailing Account</div>
     <label class="field">
       <span class="lbl">Sub-account ID</span>
       <input id="d-sub" value="${esc(t.subaccountId)}" placeholder="e.g. 48213" autocomplete="off">
-      <div class="hint">Billing and mail volume for this client. Checked against thanks.io when you save.</div>
+      <div class="hint">Billing and mail volume for this client. Checked against Mailing Account when you save.</div>
       <div class="err hidden" id="d-sub-err"></div>
     </label>
 
     <div class="sect spaced">Postcard design</div>
-    <p class="paneintro">Each Ripple location can use its own saved Thanks.io Creative, separate templates, or a brand default. Existing mailings remain on their previous design until a new mode is selected.</p>
+    <p class="paneintro">Each Ripple location can use its own saved Mailing Account Creative, separate templates, or a brand default. Existing mailings remain on their previous design until a new mode is selected.</p>
     <label class="field">
       <span class="lbl">Sending method</span>
       <select id="d-postcard-mode">
@@ -1593,8 +1608,8 @@ function modalWorkspace(id, startSect) {
     <div class="hint">Creative sends use the saved front and message together. Ripple preserves the unique signed QR URL on every postcard.</div>
 
     <div class="sect spaced">Ripple beta wallet</div>
-    <p class="paneintro">Billing contact must be from main Ripple HighLevel location WzwhUvsDxq3KOUJqAjmJ. Saving this ID does not charge the contact. Live checkout is not active yet.</p>
-    <label class="field"><span class="lbl">HighLevel billing Contact ID</span>
+    <p class="paneintro">Billing contact must be from main Ripple Location location WzwhUvsDxq3KOUJqAjmJ. Saving this ID does not charge the contact. Live checkout is not active yet.</p>
+    <label class="field"><span class="lbl">Location billing Contact ID</span>
       <input id="d-billing-contact" value="${esc(t.billingContactId)}" placeholder="Contact ID in main Ripple sub-account" autocomplete="off"></label>
     <label class="field"><span class="lbl">Low balance alert ($)</span>
       <input id="d-low-balance" inputmode="decimal" value="${esc(centsToStr(t.lowBalanceAlertCents))}" placeholder="50.00"></label>
@@ -1646,7 +1661,7 @@ function modalWorkspace(id, startSect) {
     <button class="btn ${t.status === "active" ? "danger" : ""}" id="ws-toggle"></button>
 
     <div class="sect spaced">Delete</div>
-    <p class="paneintro">A location cannot be deleted from here. It exists because the Ripple app is installed on that HighLevel sub-account - uninstall it there and the app-events workflow revokes the token and pauses the row. Suspending is the reversible option.</p>`;
+    <p class="paneintro">A location cannot be deleted from here. It exists because the Ripple app is installed on that Location sub-account - uninstall it there and the app-events workflow revokes the token and pauses the row. Suspending is the reversible option.</p>`;
 
   const paneHtml = {
     general: paneGeneral, highlevel: paneHighlevel, landing: paneLanding,
@@ -1713,6 +1728,66 @@ function modalWorkspace(id, startSect) {
   $("d-postcard-mode").addEventListener("change", paintPostcardMode);
   paintPostcardMode();
 
+  
+  // Logo saves immediately; the rest of the workspace retains existing Save behavior.
+  const logoPreview = $("d-logo-preview"), logoEmpty = $("d-logo-empty"),
+        logoStatus = $("d-logo-status"), logoRemove = $("d-logo-remove");
+  function renderLogo(url) {
+    const valid = typeof url === "string" && /^https:\/\//i.test(url);
+    logoPreview.style.display = valid ? "block" : "none";
+    logoEmpty.style.display = valid ? "none" : "block";
+    logoRemove.style.display = valid ? "inline-flex" : "none";
+    if (valid) logoPreview.src = url; else logoPreview.removeAttribute("src");
+  }
+  async function brandLogoOp(action, extra = {}) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) throw Error("Sign in again to edit the logo.");
+    const response = await fetch(SUPABASE_URL + "/functions/v1/ripple-brand-logo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY,
+        "Authorization": "Bearer " + session.access_token },
+      body: JSON.stringify({ action, locationId: t.id, ...extra })
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok || !body.ok) throw Error(body.error || "Logo request failed");
+    return body;
+  }
+  brandLogoOp("get").then(data => renderLogo(data.logoUrl))
+    .catch(e => logoStatus.textContent = "Could not load logo: " + e.message);
+  $("d-logo-file").addEventListener("change", async function() {
+    const file = this.files?.[0];
+    if (!file) return;
+    if (!["image/png","image/jpeg","image/webp"].includes(file.type) ||
+        !file.size || file.size > 2097152) {
+      logoStatus.textContent = "Choose a PNG, JPG, or WebP image no larger than 2 MB.";
+      this.value = ""; return;
+    }
+    this.disabled = true;
+    logoStatus.textContent = "Uploading logo…";
+    try {
+      const encoded = await new Promise((resolve,reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(",")[1]);
+        reader.onerror = () => reject(Error("Unable to read image"));
+        reader.readAsDataURL(file);
+      });
+      const data = await brandLogoOp("upload", {mime:file.type,base64:encoded});
+      renderLogo(data.logoUrl);
+      logoStatus.textContent = "Logo saved. It will appear on this location's scratch-card page.";
+    } catch(e) { logoStatus.textContent = "Upload failed: " + e.message; }
+    finally { this.disabled = false; this.value = ""; }
+  });
+  logoRemove.onclick = async () => {
+    if (!confirm("Remove this location's scratch-card logo?")) return;
+    logoRemove.disabled = true;
+    try {
+      await brandLogoOp("remove");
+      renderLogo(null);
+      logoStatus.textContent = "Logo removed.";
+    } catch(e) { logoStatus.textContent = "Remove failed: " + e.message; }
+    finally { logoRemove.disabled = false; }
+  };
+
   // -- Dirty tracking, so the footer can say what is unsaved and the nav can
   // flag which section it is in.
   const DRAFTED = ["general", "highlevel", "landing", "prizes", "look", "mail"];
@@ -1733,10 +1808,10 @@ function modalWorkspace(id, startSect) {
   // -- Readiness -----------------------------------------------------------
   function paintReady() {
     const items = [
-      { ok: !!t.connected, on: "HighLevel connected", off: "HighLevel not connected", go: "highlevel" },
+      { ok: !!t.connected, on: "Location connected", off: "Location not connected", go: "highlevel" },
       { ok: !!t.backfilled, on: "Customer addresses backfilled", off: "Backfill has not run - sends fail closed", go: null },
       { ok: !!t.calendarId, on: "Booking calendar set", off: "No calendar - the claim button stays hidden", go: "highlevel" },
-      { ok: !!t.subaccountId, on: "thanks.io sub-account set", off: "No mail account - nothing can be billed", go: "mail" },
+      { ok: !!t.subaccountId, on: "Mailing Account sub-account set", off: "No mail account - nothing can be billed", go: "mail" },
       { ok: weights.length > 0, on: "Prizes set", off: "No prizes - the scratch card has nothing to reveal", go: "prizes" },
       { ok: true, on: t.landingUrl ? "Landing page: own domain" : "Landing page: platform default", off: "", go: "landing" },
     ];
@@ -1757,12 +1832,12 @@ function modalWorkspace(id, startSect) {
           <div class="kv"><span class="k">Token</span><span class="val" style="color:var(--good)">Rotating on schedule</span></div>
         </div>
       </div>
-      <p class="hint" style="margin:-8px 0 4px">Tokens are refreshed by WF0 every half hour. If a client uninstalls the app in HighLevel the row is paused automatically.</p>` : `
+      <p class="hint" style="margin:-8px 0 4px">Tokens are refreshed by WF0 every half hour. If a client uninstalls the app in Location the row is paused automatically.</p>` : `
       <div class="warn-box">
         <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 17h.01M10.3 3.9L2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <div>No live token for this location. Calendars will not load and no contact can be written until the Ripple app is authorized again on this sub-account.</div>
       </div>
-      <button class="btn" id="ws-reauth"><svg viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Authorize in HighLevel</button>
+      <button class="btn" id="ws-reauth"><svg viewBox="0 0 24 24" fill="none"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Authorize in Location</button>
       <div id="ws-reauth-status"></div>`;
     const rb = $("ws-reauth");
     if (rb) rb.onclick = async () => {
@@ -1774,7 +1849,7 @@ function modalWorkspace(id, startSect) {
         $("ws-reauth-status").innerHTML = `<div class="info-box" style="margin-top:12px;background:var(--good-wash);border-color:var(--good)">Install opened in a new tab. Authorize there, then reload this page.</div>`;
       } catch (e) {
         $("ws-reauth-status").innerHTML = `<div class="info-box" style="margin-top:12px;background:var(--coral-wash);border-color:var(--coral)">Could not start the install: ${esc(e.message)}</div>`;
-        rb.disabled = false; rb.textContent = "Authorize in HighLevel";
+        rb.disabled = false; rb.textContent = "Authorize in Location";
       }
     };
   }
@@ -1823,14 +1898,14 @@ function modalWorkspace(id, startSect) {
         calendars.map((c) => `<option value="${esc(c.id)}">${esc(c.name || c.id)}</option>`).join("");
       if (keep && !calendars.some((c) => c.id === keep)) {
         sel.insertAdjacentHTML("beforeend",
-          `<option value="${esc(keep)}">No longer in HighLevel - ${esc(keep)}</option>`);
+          `<option value="${esc(keep)}">No longer in Location - ${esc(keep)}</option>`);
         show($("d-cal-err"), "The saved calendar no longer exists in this account. Pick a replacement.");
       }
       sel.value = keep;
-      if (!calendars.length) show($("d-cal-err"), "This account has no calendars yet. Create one in HighLevel first.");
+      if (!calendars.length) show($("d-cal-err"), "This account has no calendars yet. Create one in Location first.");
       paint();
     } catch (e) {
-      // Only blame the scope when HighLevel actually refused us. Anything else
+      // Only blame the scope when Location actually refused us. Anything else
       // (an unknown action, a missing token, a 500) needs its own message.
       const scopeIssue = /401|403|scope/i.test(e.message);
       show($("d-cal-err"), scopeIssue
@@ -2026,7 +2101,7 @@ function modalWorkspace(id, startSect) {
 
     if (!name) return fail("general", "m-name", null, "The franchise name cannot be empty.");
     if (betaEnabled && !billingContact) return fail("mail", "d-billing-contact", "d-beta-billing-err", "Enter the billing Contact ID before enabling beta wallet requests.");
-    if (billingContact && !/^[a-zA-Z0-9_-]{5,100}$/.test(billingContact)) return fail("mail", "d-billing-contact", "d-beta-billing-err", "Enter a valid HighLevel Contact ID.");
+    if (billingContact && !/^[a-zA-Z0-9_-]{5,100}$/.test(billingContact)) return fail("mail", "d-billing-contact", "d-beta-billing-err", "Enter a valid Location Contact ID.");
     if (lowBalance && (!Number.isFinite(Number(lowBalance)) || Number(lowBalance) < 0 || Number(lowBalance) > 5000)) return fail("mail", "d-low-balance", "d-beta-billing-err", "Invalid low-balance threshold.");
     const isPositiveId = (v) => /^\d+$/.test(v) && Number.isSafeInteger(Number(v)) && Number(v)>0;
     if (pcMode === "brand_default" && !pcBrand) return fail("mail", "d-postcard-brand", "d-postcard-err", "Enter a configured brand key.");
@@ -2167,7 +2242,7 @@ function modalPlatformAddLocation() {
             <svg viewBox="0 0 24 24" fill="none" style="width:19px;height:19px"><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="7" stroke="currentColor" stroke-width="1.4" opacity=".65"/><circle cx="12" cy="12" r="10.5" stroke="currentColor" stroke-width="1.2" opacity=".35"/></svg>
           </span>
           <strong style="display:block;font-size:14px">Connect Ripple Location</strong>
-          <span style="display:block;color:var(--muted);font-size:11.5px;line-height:1.5;margin-top:5px">Install Ripple on a HighLevel sub-account through OAuth.</span>
+          <span style="display:block;color:var(--muted);font-size:11.5px;line-height:1.5;margin-top:5px">Install Ripple on a Location sub-account through OAuth.</span>
         </button>
         <button id="platform-choose-ember" style="border:1px solid #F7CCAE;background:var(--ember-wash);border-radius:13px;padding:18px;text-align:left;color:var(--ink)">
           <span style="width:34px;height:34px;border-radius:10px;background:#fff;display:grid;place-items:center;margin-bottom:10px;font-size:18px">🔥</span>
@@ -2203,14 +2278,14 @@ function modalEmberEnrollment() {
       </div>
       <label class="field"><span class="lbl">Existing Ripple location (optional)</span>
         <select id="ember-enroll-source"><option value="">New Ember-only location</option>${rippleOptions}</select>
-        <div class="hint">Choose a Ripple location only when the same HighLevel sub-account is opting into Ember.</div>
+        <div class="hint">Choose a Ripple location only when the same Location sub-account is opting into Ember.</div>
       </label>
       <label class="field"><span class="lbl">Ember display name</span>
         <input id="ember-enroll-name" placeholder="Example Home Services">
       </label>
       <label class="field"><span class="lbl">Ember location ID</span>
         <input id="ember-enroll-id" placeholder="EXAMPLE-TAMPA">
-        <div class="hint">Use a BizLab tenant ID such as <code>TEST-PRITCHARD</code>. Do not enter a HighLevel custom-field ID here.</div>
+        <div class="hint">Use a BizLab tenant ID such as <code>TEST-PRITCHARD</code>. Do not enter a Location custom-field ID here.</div>
       </label>
       <div class="row2">
         <label class="field"><span class="lbl">FieldRoutes office ID</span>
