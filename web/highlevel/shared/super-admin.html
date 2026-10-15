@@ -414,6 +414,7 @@
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn ghost sm" type="button" id="boggs-review-refresh">Refresh candidate results</button>
+          <button class="btn ghost sm" type="button" id="boggs-names-export">Export 51 with Thanks.io names</button>
           <button class="btn sm" type="button" id="boggs-review-start">Purchase approved lookups (up to $8.40)</button>
         </div>
       </div>
@@ -782,6 +783,47 @@ document.addEventListener("click",e=>{
   if(e.target.closest("#boggs-review-refresh"))boggsReviewLoad("refresh");
 });
 
+// -- Existing Thanks.io list names: read-only CSV export --------------------
+async function exportBoggsNames() {
+  const button=document.getElementById("boggs-names-export");
+  const status=document.getElementById("boggs-review-message");
+  if(button)button.disabled=true;
+  const byHash=new Map();
+  try {
+    for(const offset of [0,4,8]){
+      if(status)status.textContent="Looking up recipient names in previously purchased Thanks.io lists… "+offset+"/12";
+      const {data:{session}}=await sb.auth.getSession();
+      if(!session)throw Error("Your login session has expired.");
+      const response=await fetch(SUPABASE_URL+"/functions/v1/ripple-recipient-review",{
+        method:"POST",
+        headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+session.access_token},
+        body:JSON.stringify({action:"names",offset})
+      });
+      const data=await response.json().catch(()=>({}));
+      if(!response.ok)throw Error(data.error||"Thanks.io lookup request failed");
+      for(const row of data.matched||[]){
+        if(byHash.has(row.addr_hash))throw Error("Duplicate address hash returned; export stopped");
+        byHash.set(row.addr_hash,row);
+      }
+    }
+    if(byHash.size!==51)throw Error("Expected 51 addresses, received "+byHash.size+"; export stopped");
+    const data=[...byHash.values()].sort((a,b)=>(String(a.address)+" "+String(a.postal_code)).localeCompare(String(b.address)+" "+String(b.postal_code)));
+    const headers=["Recipient Name (Thanks.io)","Street Address","City","State","ZIP","Thanks.io List ID","Name Status"];
+    const csvField=x=>'"'+String(x??"").replace(/"/g,'""')+'"';
+    const csv=[headers,...data.map(x=>[x.name,x.address,x.city||"Scottsdale",x.province||"AZ",x.postal_code,x.mailing_list_id,x.name_available?"Provided by Thanks.io":"Not provided"])].map(row=>row.map(csvField).join(",")).join("\r\n");
+    const blob=new Blob(["\uFEFF",csv],{type:"text/csv;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download="Boggs_51_Thanksio_Recipient_Names.csv";
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),3000);
+    const named=data.filter(x=>x.name_available).length;
+    if(status)status.textContent="CSV exported: 51 eligible addresses. Thanks.io name provided for "+named+"; missing for "+(51-named)+". Names are recipient labels, not independently verified homeowner identities. No postcards sent.";
+  }catch(error){if(status)status.textContent="Name export unavailable: "+error.message;}
+  finally{if(button)button.disabled=false;}
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("#boggs-names-export"))exportBoggsNames();
+});
 // -- Matrix contact address scan: Super Admin read-only review ---------------
 async function matrixScanCall(action) {
   const {data:{session}}=await sb.auth.getSession();
