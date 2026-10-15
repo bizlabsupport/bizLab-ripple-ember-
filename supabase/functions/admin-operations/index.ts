@@ -431,6 +431,9 @@ Deno.serve(async (req: Request) => {
                   'ghl_calendar_id, booking_url, landing_url, ' +
                   'booking_page_url, theme, landing_template, ghl_fields, ' +
                   'price_per_card_cents, price_per_lookup_cents, ' +
+                  'billing_ghl_contact_id, beta_billing_enabled, low_balance_alert_cents, ' +
+                  'postcard_mode, postcard_brand_key, postcard_creative_id, ' +
+                  'postcard_image_template_id, postcard_message_template_id, ' +
                   'address_backfill_completed_at, created_at')
           .not('location_id', 'is', null)
           .neq('location_id', '')
@@ -493,7 +496,10 @@ Deno.serve(async (req: Request) => {
         // Handled by prepareDeliveryUpdates, which validates and normalises.
         const VALIDATED = ['landing_url', 'ghl_calendar_id', 'thanksio_subaccount_id',
                            'booking_page_url', 'ghl_fields', 'theme',
-                           'price_per_card_cents', 'price_per_lookup_cents'];
+                           'price_per_card_cents', 'price_per_lookup_cents',
+                           'billing_ghl_contact_id', 'beta_billing_enabled', 'low_balance_alert_cents',
+                           'postcard_mode', 'postcard_brand_key', 'postcard_creative_id',
+                           'postcard_image_template_id', 'postcard_message_template_id'];
 
         // Anything not recognised used to be dropped in silence, so the panel
         // reported a successful save and the value was simply gone on reload.
@@ -516,6 +522,38 @@ Deno.serve(async (req: Request) => {
         // whenever a calendar is supplied (so the derived link can't drift).
         await prepareDeliveryUpdates(locationId, updates, allowed, admin);
 
+        // Beta wallet and saved postcard Creative are first-class location settings.
+        if ('billing_ghl_contact_id' in updates) {
+          const v=String(updates.billing_ghl_contact_id??'').trim();
+          if(v&&!/^[A-Za-z0-9_-]{8,80}$/.test(v))throw new FieldError('Invalid HighLevel billing contact ID', 'billing_ghl_contact_id');
+          allowed.billing_ghl_contact_id=v||null;
+        }
+        if ('beta_billing_enabled' in updates) {
+          if(typeof updates.beta_billing_enabled!=='boolean')throw new FieldError('Wallet enabled must be true or false', 'beta_billing_enabled');
+          allowed.beta_billing_enabled=updates.beta_billing_enabled;
+        }
+        if ('low_balance_alert_cents' in updates) {
+          const n=Number(updates.low_balance_alert_cents);
+          if(!Number.isInteger(n)||n<0||n>10000000)throw new FieldError('Invalid low balance alert amount', 'low_balance_alert_cents');
+          allowed.low_balance_alert_cents=n;
+        }
+        if ('postcard_mode' in updates) {
+          const v=String(updates.postcard_mode??'').trim();
+          if(!['creative','legacy'].includes(v))throw new FieldError('Postcard mode must be creative or legacy', 'postcard_mode');
+          allowed.postcard_mode=v;
+        }
+        if ('postcard_brand_key' in updates) {
+          const v=String(updates.postcard_brand_key??'').trim();
+          if(v&&!/^[a-z0-9_-]{1,70}$/.test(v))throw new FieldError('Invalid postcard brand key', 'postcard_brand_key');
+          allowed.postcard_brand_key=v||null;
+        }
+        for(const k of ['postcard_creative_id','postcard_image_template_id','postcard_message_template_id']){
+          if(k in updates){
+            const v=String(updates[k]??'').trim();
+            if(v&&!/^[1-9][0-9]{0,11}$/.test(v))throw new FieldError('Invalid postcard template or creative ID',k);
+            allowed[k]=v?Number(v):null;
+          }
+        }
         if (!Object.keys(allowed).length) {
           return json({ error: 'nothing to update' }, 400);
         }
