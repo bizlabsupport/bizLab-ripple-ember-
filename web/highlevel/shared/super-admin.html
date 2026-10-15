@@ -405,6 +405,40 @@
       <p id="wallet-admin-note" style="color:#6F7885;font-size:12px;margin:12px 0 0">Balances reflect recorded ledger entries only. Payment verification and usage deductions are still pending.</p>
     </section>
 
+
+    <section id="boggs-recipient-review" style="background:#fff;border:1px solid #E3E9EE;border-radius:14px;padding:20px;margin:0 0 22px">
+      <div style="display:flex;justify-content:space-between;gap:16px;align-items:start;flex-wrap:wrap">
+        <div>
+          <h2 style="font-size:18px;margin:0 0 5px">Boggs — Recipient Review</h2>
+          <p style="font-size:12px;color:#5F6E7B;margin:0">Initial 14 completed-service addresses • 12 streets • up to 10 houses per street. Draft-only: no postcards sent.</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost sm" type="button" id="boggs-review-refresh">Refresh candidate results</button>
+          <button class="btn sm" type="button" id="boggs-review-start">Purchase approved lookups (up to $8.40)</button>
+        </div>
+      </div>
+      <p id="boggs-review-message" style="font-size:12px;color:#5F6E7B;margin:12px 0" role="status">Loading lookup status…</p>
+      <div id="boggs-review-stats" style="display:flex;flex-wrap:wrap;gap:22px;margin:15px 0"></div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;min-width:720px;text-align:left;font-size:12px">
+          <thead><tr style="border-bottom:1px solid #E3E9EE;color:#5F6E7B">
+            <th style="padding:10px 8px">Street / anchor</th>
+            <th style="padding:10px 8px">Search status</th>
+            <th style="padding:10px 8px">Returned</th>
+            <th style="padding:10px 8px">Same street</th>
+            <th style="padding:10px 8px">Eligible</th>
+            <th style="padding:10px 8px">Excluded</th>
+          </tr></thead>
+          <tbody id="boggs-review-rows"><tr><td colspan="6" style="padding:12px">No lookups have been purchased.</td></tr></tbody>
+        </table>
+      </div>
+      <details style="margin-top:15px">
+        <summary style="font-size:13px;cursor:pointer;font-weight:700">Review eligible and excluded recipient addresses</summary>
+        <div id="boggs-review-recipients" style="margin-top:10px;max-height:350px;overflow:auto;font-size:12px;color:#334155">Retrieve search results first.</div>
+      </details>
+      <p style="font-size:12px;color:#5F6E7B;margin:12px 0 0">These are estimates using the Ripple billing rates. Searches purchase address data from Thanks.io; no postcard mailing is performed. Results require review before a separate mailing approval.</p>
+    </section>
+
     <p class="note">
       Cross-tenant visibility is granted by the <code>is_super_admin</code> flag, read server-side inside
       RLS via a security-definer function - never from the browser. Tenant admins cannot elevate themselves.
@@ -562,7 +596,7 @@ let emberStatusFilter = "all";
   document.getElementById("app").classList.remove("hidden");
 
   await loadTenants();
-  await Promise.all([loadPlatform(), loadEmber(), loadBillingOverview()]);
+  await Promise.all([loadPlatform(), loadEmber(), loadBillingOverview(), boggsReviewLoad()]);
   render();
 })();
 
@@ -663,6 +697,79 @@ async function loadEmber() {
   }
   renderEmber();
 }
+
+// -- Boggs safe recipient search review (no postcard sending) ----------------
+async function boggsReviewCall(action) {
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)throw Error("Your session expired.");
+  const response=await fetch(SUPABASE_URL+"/functions/v1/ripple-recipient-review",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+session.access_token},
+    body:JSON.stringify({action})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(result.error||"Could not access review endpoint");
+  return result;
+}
+function boggsReviewRender(result) {
+  const rows=document.getElementById("boggs-review-rows");
+  const stats=document.getElementById("boggs-review-stats");
+  const recipients=document.getElementById("boggs-review-recipients");
+  const items=result.lookupRows||[];
+  const purchased=Number(result.purchasedStreetLookups ?? items.filter(x=>x.mailing_list_id).length);
+  const populated=Number(result.completedStreetLookups ?? items.filter(x=>x.status==="populated").length);
+  const eligible=Number(result.eligibleCount??items.reduce((a,x)=>a+Number(x.eligible_count||0),0));
+  const lookupCents=Number(result.estimatedLookupCostCents??purchased*70);
+  const postageCents=Number(result.estimatedPostcardCostCents??eligible*104);
+  stats.innerHTML=[
+    ["Purchased streets",purchased+"/12"],
+    ["Reviewed streets",populated+"/12"],
+    ["Eligible recipients",String(eligible)],
+    ["Lookup estimate",walletMoney(lookupCents)],
+    ["Postcard estimate",walletMoney(postageCents)]
+  ].map(([label,value])=>'<div><strong style="font-size:19px">'+esc(value)+'</strong><div style="font-size:11px;color:#5F6E7B">'+esc(label)+'</div></div>').join("");
+  rows.innerHTML=items.length?items.map(x=>
+    '<tr style="border-bottom:1px solid #E3E9EE">'+
+    '<td style="padding:9px 8px"><b>'+esc(x.anchor_address)+'</b><div style="font-size:11px;color:#6F7885">'+esc(x.street_key)+'</div></td>'+
+    '<td style="padding:9px 8px">'+esc(x.status)+(x.error_message?'<div style="color:#B01657">'+esc(x.error_message)+'</div>':'')+'</td>'+
+    '<td style="padding:9px 8px">'+esc(x.radius_candidate_count??"—")+'</td>'+
+    '<td style="padding:9px 8px">'+esc(x.same_street_count??"—")+'</td>'+
+    '<td style="padding:9px 8px">'+esc(x.eligible_count??"—")+'</td>'+
+    '<td style="padding:9px 8px">'+esc(x.exclusion_count??"—")+'</td></tr>'
+  ).join(""):'<tr><td colspan="6" style="padding:10px">No searches purchased yet.</td></tr>';
+  recipients.innerHTML=Array.isArray(result.recipients)&&result.recipients.length?
+    result.recipients.map(x=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:8px;border-bottom:1px solid #E3E9EE"><span>'+
+      esc([x.address,x.city,x.province,x.postal_code].filter(Boolean).join(", "))+
+      '</span><strong>'+esc(x.eligibility)+'</strong></div>').join(""):
+      'Run the searches, then refresh results to display eligible and excluded addresses.';
+  const message=document.getElementById("boggs-review-message");
+  if(purchased===0)message.textContent="No paid search requests yet. Maximum approved address lookups: 120 at $0.07 ($8.40).";
+  else if(populated<12)message.textContent="Thanks.io searches are processing. Refresh again after a short wait; purchased lookups are never automatically purchased twice.";
+  else message.textContent="Recipient review complete. No postcards have been ordered or mailed. Review the recipient list and projected cost.";
+  const button=document.getElementById("boggs-review-start");
+  if(button)button.disabled=items.length>0;
+}
+async function boggsReviewLoad(action="results") {
+  const m=document.getElementById("boggs-review-message");
+  if(!m)return;
+  m.textContent="Loading recipient review…";
+  try{
+    let result=await boggsReviewCall(action);
+    if(action==="purchase"){
+      m.textContent="Lookup purchase submitted; fetching progress…";
+      result=await boggsReviewCall("results");
+    }
+    boggsReviewRender(result);
+    if(result.errors?.length)m.textContent+=" Review errors: "+result.errors.join("; ");
+  }catch(e){m.textContent="Review unavailable: "+e.message;}
+}
+document.addEventListener("click",e=>{
+  if(e.target.closest("#boggs-review-start")){
+    if(!window.confirm("Purchase up to 120 Thanks.io address records across 12 unique streets for Boggs? Maximum estimated Ripple lookup cost is $8.40. NO postcards will be sent."))return;
+    boggsReviewLoad("purchase");
+  }
+  if(e.target.closest("#boggs-review-refresh"))boggsReviewLoad("refresh");
+});
 
 // -- Ripple Super Admin balance tracker (read-only) ------------------------
 let BILLING_ROWS = [];
