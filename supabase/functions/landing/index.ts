@@ -153,7 +153,7 @@ Deno.serve(async (req: Request) => {
         bookUrl: bookBase || null,
         brand: {
           name: cfg.client_name,
-          logo: (theme as any).logo || cfg.brand_logo_url || null,
+          logo: cfg.brand_logo_url || (theme as any).logo || null,
         },
         prize: {
           label: prize.label || 'A neighbour-only offer',
@@ -232,7 +232,7 @@ Deno.serve(async (req: Request) => {
 
       return json({
         theme,
-        brand: { name: cfg?.client_name, logo: (theme as any).logo || cfg?.brand_logo_url || null },
+        brand: { name: cfg?.client_name, logo: cfg?.brand_logo_url || (theme as any).logo || null },
         prize: { label: prize.label || 'Your neighbour offer', sub: prize.sub || '' },
         address: {
           // full is present when the card is per-recipient: the booking form
