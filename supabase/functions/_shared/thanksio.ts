@@ -112,11 +112,44 @@ export async function radiusSearch(
     include_search_address: p.includeSearchAddress ?? false,
     append_data: false, // never — that's the +$0.20/record phone/email add-on
   };
-  if (p.subAccount != null) body.sub_account = p.subAccount;
+  // The radius-search endpoint does NOT accept sub_account. Its undocumented
+  // sub_account parameter was ignored and created lists in the agency account.
+  // Create a correctly scoped mailing list first, and require verification.
+  let expectedSubAccount: number | undefined;
+  if (p.subAccount != null) {
+    expectedSubAccount = Number(p.subAccount);
+    if (!Number.isSafeInteger(expectedSubAccount) || expectedSubAccount <= 0) {
+      throw new ThanksIoError('Invalid thanks.io sub-account id; radius search blocked');
+    }
+    const created = await call(token, 'POST', '/mailing-lists/', {
+      description: 'Ripple radius search - ' + p.address + ' - ' + p.postalCode,
+      sub_account_id: expectedSubAccount,
+    });
+    const newListId = Number(created?.id ?? created?.data?.id);
+    if (!Number.isSafeInteger(newListId) || newListId <= 0) {
+      throw new ThanksIoError('Mailing list created but no valid ID returned; radius purchase blocked');
+    }
+    const details = await call(token, 'GET', '/mailing-lists/' + newListId);
+    const owner = details?.data ?? details;
+    if (Number(owner?.sub_account_id) !== expectedSubAccount) {
+      throw new ThanksIoError('Mailing list ownership mismatch; radius purchase blocked (expected sub-account ' +
+        expectedSubAccount + ')');
+    }
+    body.mailing_list_id = newListId;
+  }
 
   const r = await call(token, 'POST', '/mailing-lists-utils/buy-radius-search', body);
+  const resultListId = Number(r.mailing_list_id ?? r.mailingListId);
+  if (expectedSubAccount != null && Number.isSafeInteger(resultListId)) {
+    const details = await call(token, 'GET', '/mailing-lists/' + resultListId);
+    const owner = details?.data ?? details;
+    if (Number(owner?.sub_account_id) !== expectedSubAccount) {
+      throw new ThanksIoError('Purchased radius list is not owned by intended sub-account ' +
+        expectedSubAccount + '; STOP further processing');
+    }
+  }
   return {
-    mailingListId: r.mailing_list_id ?? r.mailingListId,
+    mailingListId: resultListId,
     message: r.message ?? '',
     failure: r.failure ?? false,
   };
