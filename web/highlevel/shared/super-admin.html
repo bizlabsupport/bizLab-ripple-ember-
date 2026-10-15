@@ -820,7 +820,8 @@ function paintMatrixScan(result) {
       found.map(x=>x.addr_hash).join(", ") :
       "No matches recorded in completed pages yet.";
   }
-  if(r.status==="complete"){button.textContent="Scan completed";button.disabled=true;}
+  if(r.status==="complete" && Number(r.addressed_contacts||0)===0){button.textContent="Rerun Matrix Scan (fixed)";button.disabled=false;}
+  else if(r.status==="complete"){button.textContent="Scan completed";button.disabled=true;}
   else if(r.status==="failed"){button.textContent="Resume Matrix Scan";button.disabled=false;}
   else {button.textContent="Continue Matrix Scan";button.disabled=false;}
 }
@@ -855,7 +856,7 @@ document.addEventListener("click",async e=>{
   }
   if(!e.target.closest("#matrix-scan-button"))return;
   const label=e.target.textContent||"";
-  const action=label.includes("Resume")?"resume":label.includes("Continue")?"continue":"start";
+  const action=label.includes("Rerun")?"restart":label.includes("Resume")?"resume":label.includes("Continue")?"continue":"start";
   await matrixScanRun(action);
 });
 // -- Ripple Super Admin balance tracker (read-only) ------------------------
