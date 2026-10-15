@@ -441,6 +441,7 @@
         <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
           <div><h3 style="font-size:15px;margin:0 0 5px">Matrix Customer Address Scan</h3>
             <p style="font-size:12px;color:#5F6E7B;margin:0">Scan Boggs' HighLevel contacts without editing them. Matching contact addresses are flagged for review, including leads.</p></div>
+          <button type="button" class="btn ghost sm" id="matrix-scan-diagnose">Check address fields</button>
           <button type="button" class="btn sm" id="matrix-scan-button">Sync Customer Addresses</button>
         </div>
         <p id="matrix-scan-status" style="font-size:12px;color:#5F6E7B;margin:12px 0">No scan started yet.</p>
@@ -839,6 +840,19 @@ async function matrixScanRun(action) {
   }
 }
 document.addEventListener("click",async e=>{
+  if(e.target.closest("#matrix-scan-diagnose")){
+    const el=document.getElementById("matrix-scan-status");
+    if(el)el.textContent="Checking Matrix contact address fields (no customer information returned)…";
+    try {
+      const result=await matrixScanCall("diagnose");
+      if(el)el.textContent="Search results contain address: "+(result.searchHasAddress?"Yes":"No")+
+        " • Full contact contains address: "+(result.detailHasAddress?"Yes":"No")+
+        " • Search fields: "+(result.sampleContactKeys||[]).join(", ")+
+        " • Full contact fields: "+(result.detailKeys||[]).join(", ")+
+        ". Do not approve postcards while this scan is unresolved.";
+    }catch(err){if(el)el.textContent="Diagnostic failed: "+err.message;}
+    return;
+  }
   if(!e.target.closest("#matrix-scan-button"))return;
   const label=e.target.textContent||"";
   const action=label.includes("Resume")?"resume":label.includes("Continue")?"continue":"start";
