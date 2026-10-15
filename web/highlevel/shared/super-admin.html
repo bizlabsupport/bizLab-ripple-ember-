@@ -437,6 +437,16 @@
         <div id="boggs-review-recipients" style="margin-top:10px;max-height:350px;overflow:auto;font-size:12px;color:#334155">Retrieve search results first.</div>
       </details>
       <p style="font-size:12px;color:#5F6E7B;margin:12px 0 0">These are estimates using the Ripple billing rates. Searches purchase address data from Thanks.io; no postcard mailing is performed. Results require review before a separate mailing approval.</p>
+      <div style="border-top:1px solid #E3E9EE;margin-top:20px;padding-top:18px">
+        <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+          <div><h3 style="font-size:15px;margin:0 0 5px">Matrix Customer Address Scan</h3>
+            <p style="font-size:12px;color:#5F6E7B;margin:0">Scan Boggs' HighLevel contacts without editing them. Matching contact addresses are flagged for review, including leads.</p></div>
+          <button type="button" class="btn sm" id="matrix-scan-button">Sync Customer Addresses</button>
+        </div>
+        <p id="matrix-scan-status" style="font-size:12px;color:#5F6E7B;margin:12px 0">No scan started yet.</p>
+        <div id="matrix-scan-matches" style="font-size:12px;color:#334155"></div>
+        <p style="font-size:11px;color:#5F6E7B;margin:10px 0 0">Mailing remains on hold. Contacts may be leads, so a contact match is not automatically classified as an existing customer. No global backfill-completed flag is changed by this scan.</p>
+      </div>
     </section>
 
     <p class="note">
@@ -596,7 +606,7 @@ let emberStatusFilter = "all";
   document.getElementById("app").classList.remove("hidden");
 
   await loadTenants();
-  await Promise.all([loadPlatform(), loadEmber(), loadBillingOverview(), boggsReviewLoad()]);
+  await Promise.all([loadPlatform(), loadEmber(), loadBillingOverview(), boggsReviewLoad(), matrixScanRun("status")]);
   render();
 })();
 
@@ -771,6 +781,69 @@ document.addEventListener("click",e=>{
   if(e.target.closest("#boggs-review-refresh"))boggsReviewLoad("refresh");
 });
 
+// -- Matrix contact address scan: Super Admin read-only review ---------------
+async function matrixScanCall(action) {
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)throw Error("Your session expired.");
+  const response=await fetch(SUPABASE_URL+"/functions/v1/ripple-matrix-address-scan",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","apikey":SUPABASE_ANON_KEY,"Authorization":"Bearer "+session.access_token},
+    body:JSON.stringify({action})
+  });
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok)throw Error(result.error||"Matrix scan request failed");
+  return result;
+}
+function paintMatrixScan(result) {
+  const el=document.getElementById("matrix-scan-status");
+  const matches=document.getElementById("matrix-scan-matches");
+  const button=document.getElementById("matrix-scan-button");
+  if(!el||!button)return;
+  const r=result.run;
+  if(!r){
+    el.textContent="No Matrix contact scan yet. Click Sync Customer Addresses to begin.";
+    button.textContent="Sync Customer Addresses";
+    button.disabled=false;
+    if(matches)matches.textContent="";
+    return;
+  }
+  const found=result.matchedCandidates||[];
+  el.textContent="Status: "+r.status+" • Contacts scanned: "+r.scanned_contacts+
+    " • Contacts with street/ZIP: "+r.addressed_contacts+
+    " • Matches against reviewed recipient addresses: "+found.length+
+    (r.total_contacts==null?"":" • Matrix total: "+r.total_contacts)+
+    (r.last_error?" • Error: "+r.last_error:"");
+  if(matches){
+    matches.textContent=found.length ? 
+      "Matched addresses require customer-versus-lead review before mailing. Matched hashes: "+
+      found.map(x=>x.addr_hash).join(", ") :
+      "No matches recorded in completed pages yet.";
+  }
+  if(r.status==="complete"){button.textContent="Scan completed";button.disabled=true;}
+  else if(r.status==="failed"){button.textContent="Resume Matrix Scan";button.disabled=false;}
+  else {button.textContent="Continue Matrix Scan";button.disabled=false;}
+}
+async function matrixScanRun(action) {
+  const el=document.getElementById("matrix-scan-status");
+  const button=document.getElementById("matrix-scan-button");
+  if(button)button.disabled=true;
+  if(el)el.textContent="Checking Matrix contacts…";
+  try{
+    const result=await matrixScanCall(action);
+    paintMatrixScan(result);
+    if(result.run?.status==="running" && result.processedPages>0 && el)
+      el.textContent+=" • More pages remain. Click Continue Matrix Scan.";
+  }catch(err){
+    if(el)el.textContent="Matrix scan unavailable: "+err.message;
+    if(button)button.disabled=false;
+  }
+}
+document.addEventListener("click",async e=>{
+  if(!e.target.closest("#matrix-scan-button"))return;
+  const label=e.target.textContent||"";
+  const action=label.includes("Resume")?"resume":label.includes("Continue")?"continue":"start";
+  await matrixScanRun(action);
+});
 // -- Ripple Super Admin balance tracker (read-only) ------------------------
 let BILLING_ROWS = [];
 const walletMoney = (c) => new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(Number(c||0)/100);
