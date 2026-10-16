@@ -82,6 +82,26 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // FieldRoutes-sourced schedule entries are not evidence of completed service.
+    // Fail closed before any lookup or postcard charge, even if an external caller
+    // invokes the send endpoint directly rather than through drain-queue.
+    if (ghlJobId.startsWith('fr:appt:') && !body.preview) {
+      const { data: completedJob, error: completedErr } = await db
+        .from('jobs').select('id,completed_at')
+        .eq('location_id', locationId).eq('ghl_job_id', ghlJobId).maybeSingle();
+      if (completedErr) throw new Error('Could not verify service completion');
+      if (!completedJob?.completed_at) {
+        return json({ skipped: true, reason: 'service_not_completed' }, 200);
+      }
+      const { data: eligibleQueue, error: queueErr } = await db
+        .from('send_queue').select('id,completed_at,status')
+        .eq('location_id',locationId).eq('job_id',completedJob.id).maybeSingle();
+      if (queueErr) throw new Error('Could not verify mailing eligibility');
+      if (!eligibleQueue?.completed_at || !['approved','sending'].includes(eligibleQueue.status)) {
+        return json({ skipped: true, reason: 'mailing_not_approved_or_completed' }, 200);
+      }
+    }
+
     // -- 1. Gate: fail closed -------------------------------------------------
     const gate = await db.rpc('can_send', { p_location_id: locationId });
     if (gate.error) throw new Error(`can_send failed: ${gate.error.message}`);
