@@ -1,7 +1,7 @@
 import {createClient} from "jsr:@supabase/supabase-js@2";
 import {addressHash} from "../_shared/address.ts";
 const db=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false}});
-const secret=Deno.env.get("RIPPLE_CALLER_SECRET");
+const secret=Deno.env.get("RIPPLE_MATRIX_FORWARD_SECRET");
 const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json","Cache-Control":"no-store"}});
 const value=(x:unknown)=>String(x??"").trim();
 function eventName(v:unknown){
