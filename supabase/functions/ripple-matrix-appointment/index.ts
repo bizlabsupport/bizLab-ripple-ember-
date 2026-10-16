@@ -57,6 +57,15 @@ Deno.serve(async req=>{
      await audit("processed",null,existing.id);
      return respond({ok:true,event,locationId,jobId:existing.id});
    }
+   if(existing && (event==="rescheduled" || event==="scheduled")){
+     const {data:priorQueue,error:priorQueueError}=await db.from("send_queue")
+       .select("status").eq("location_id",locationId).eq("job_id",existing.id).maybeSingle();
+     if(priorQueueError)throw priorQueueError;
+     if(priorQueue && priorQueue.status!=="pending"){
+       await audit("rejected","queue_not_pending",existing.id);
+       return respond({ok:false,error:"Mailing decision already recorded; review changes manually"},409);
+     }
+   }
    const address=value(d.address||d.address1),postal=value(d.zip||d.postal_code),city=value(d.city),region=value(d.state);
    if(!address||!postal||!city||!region)return respond({ok:false,error:"Service address, city, state and ZIP are required"},422);
    if(event==="scheduled"||event==="rescheduled"){
