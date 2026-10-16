@@ -21,7 +21,7 @@ Deno.serve(async req=>{
  const supplied=req.headers.get("x-ripple-secret")||"";
  // Constant-time equality for the shared server secret.
  const a=new TextEncoder().encode(secret),b=new TextEncoder().encode(supplied);
- if(a.length!==b.length || !crypto.timingSafeEqual(a,b))return respond({ok:false,error:"Unauthorized"},401);
+ let mismatch=a.length^b.length;for(let i=0;i<Math.max(a.length,b.length);i++)mismatch|=(a[i]||0)^(b[i]||0);if(mismatch!==0)return respond({ok:false,error:"Unauthorized"},401);
  let d:Record<string,unknown>;
  try{d=await req.json();if(!d||typeof d!=="object"||Array.isArray(d))throw Error();}catch{return respond({ok:false,error:"Invalid JSON"},400);}
  const x=(d.customData && typeof d.customData==="object" && !Array.isArray(d.customData)?d.customData:{}) as Record<string,unknown>;
