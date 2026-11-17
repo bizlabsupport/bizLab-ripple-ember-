@@ -1,0 +1,696 @@
+<!-- LAWN CARE BOOKING PAGE ONLY: /lawn-care/booking-now. Replace all existing scratch/booking custom code on that page with this fragment. -->
+<!-- Production Lawn Care booking fragment. Paste into one HighLevel Custom Code element at /lawn-care/booking-now. Requires the t token from the scratch card. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus Jakarta Sans:wght@700;800&family=Plus Jakarta Sans:wght@400;600;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+
+  /* ---------------------------------------------------------------------
+     Host containment.
+     This block lives inside a HighLevel custom-code element, and GHL wraps it
+     in section > row > column > .inner - all flex. A flex item will not shrink
+     below its content by default, so the scrolling day row was pushing every
+     one of those ancestors wider than the phone, and the page scrolled
+     sideways. :has() targets only the containers that actually hold this
+     widget, so no other element on the page is affected.
+     --------------------------------------------------------------------- */
+  .c-section:has(#ripple-booking),
+  .c-section:has(#ripple-booking) > .inner,
+  .c-row:has(#ripple-booking),
+  .c-row:has(#ripple-booking) > .inner,
+  .c-column:has(#ripple-booking),
+  .c-column:has(#ripple-booking) > .inner,
+  .c-custom-code:has(#ripple-booking),
+  .custom-code-container:has(#ripple-booking) {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-x: clip;
+  }
+
+  #ripple-booking {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    -webkit-text-size-adjust: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  #ripple-booking {
+    --bg: #F7F5F1; --card: #FFFFFF; --card-edge: #E4E8DF;
+    --ink: #17202B; --ink-dim: #6B7683;
+    --fuchsia: #2E9E4F; --amber: #17592B; --amber-deep: #DDE8D7;
+    --good: #2E9E4F; --bad: #B42318; --radius: 24px;
+  }
+
+  #ripple-booking, #ripple-booking * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  
+
+  /* A flex item will not shrink below its content by default (min-width:auto).
+     The scrollable day row is wider than a phone, so without this the whole
+     column was pushed past the viewport and the page scrolled sideways -
+     which is why the field labels were cut off mid-word. Every ancestor of a
+     scrolling or nowrap element has to be allowed to shrink. */
+  #ripple-booking, #ripple-booking { max-width: 100%; overflow-x: hidden; }
+
+  #ripple-booking { background: var(--bg); color: var(--ink); font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    width: 100%; }
+
+  #ripple-booking .wrap { width: 100%; max-width: 440px; padding: 28px 20px 56px; margin: 0 auto;
+    display: flex; flex-direction: column; align-items: center; gap: 20px;
+    min-width: 0;
+    background: var(--bg); color: var(--ink);
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+
+  /* The host page (HighLevel) sets styles on bare elements, so anything that
+     matters is restated inside .wrap rather than left to inherit. */
+  #ripple-booking * { box-sizing: border-box; }
+
+  #ripple-booking p { margin: 0; }
+
+  #ripple-booking .brand { background: #fff; padding: 10px 20px; border-radius: 14px; min-height: 62px;
+    display: flex; align-items: center; }
+
+  #ripple-booking .brand img { max-height:80px; max-width:248px; width:auto; display:block; object-fit:contain; }
+
+  #ripple-booking .brand .wordmark { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 18px; color: #17592B; }
+
+
+  #ripple-booking .won { width: 100%; background: var(--card); border: 1px solid var(--card-edge);
+    border-radius: var(--radius); padding: 18px; text-align: center; }
+
+  #ripple-booking .won .tag { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-dim); }
+
+  #ripple-booking .won .label { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 21px;
+    color: var(--amber); text-transform: uppercase; margin-top: 6px; line-height: 1.15; }
+
+  #ripple-booking .won .sub { font-size: 13.5px; color: var(--ink-dim); margin-top: 6px; }
+
+
+  #ripple-booking h1 { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 20px;
+    text-transform: uppercase; text-align: center; line-height: 1.15;
+    color: var(--ink); margin: 0; opacity: 1; }
+
+  #ripple-booking .lede { font-size: 14px; color: var(--ink-dim); text-align: center; line-height: 1.5; margin-top: -8px; }
+
+
+  #ripple-booking form { width: 100%; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+  /* Each field group. They hold the row that scrolls, so they must shrink. */
+  #ripple-booking form > div { min-width: 0; max-width: 100%; }
+
+  #ripple-booking form > div > label { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink-dim);
+    text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+
+  #ripple-booking input[type=text], #ripple-booking input[type=tel], #ripple-booking input[type=email] {
+    width: 100%; font: inherit; font-size: 16px; color: var(--ink);
+    background: #FFFFFF; border: 1px solid var(--card-edge); border-radius: 12px; padding: 13px 14px;
+  }
+
+  #ripple-booking input:focus { outline: none; border-color: var(--amber); }
+
+  /* Chrome paints autofilled fields pale blue, which is unreadable on a dark
+     form. The inset shadow trick is the only way to override it. */
+  #ripple-booking input:-webkit-autofill, #ripple-booking input:-webkit-autofill:hover, #ripple-booking input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ink);
+    -webkit-box-shadow: 0 0 0 1000px #FFFFFF inset;
+    box-shadow: 0 0 0 1000px #FFFFFF inset;
+    caret-color: var(--ink);
+    transition: background-color 9999s ease-in-out 0s;
+  }
+
+  #ripple-booking input[aria-invalid="true"] { border-color: var(--bad); }
+
+
+  /* House number sits alongside the street we already know */
+  #ripple-booking .addr { display: flex; gap: 8px; align-items: stretch; min-width: 0; }
+
+  /* Was a fixed 108px. On a 320px screen that left too little for the street,
+     so it now shrinks with the viewport but never below a usable size. */
+  #ripple-booking .addr input { flex: 0 1 108px; min-width: 78px; }
+
+  #ripple-booking .addr .known { flex: 1; display: flex; align-items: center; padding: 13px 14px;
+    background: #F0F5ED; border: 1px dashed var(--card-edge); border-radius: 12px;
+    font-size: 14.5px; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; min-width: 0; }
+
+
+  /* Day chips: a short scrollable row beats a calendar on a phone when the
+     choice is "which of the next few days". */
+  #ripple-booking .days { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch; min-width: 0;
+    /* Capped against the VIEWPORT, not the parent. If any ancestor is
+       shrink-to-fit, a percentage resolves to that parent's max-content and
+       the row never scrolls - it just drags everything wider. */
+    max-width: min(100%, calc(100vw - 40px));
+    /* Let the row bleed to the screen edge so a half-visible chip signals
+       there is more to scroll, rather than ending flush and looking complete. */
+    scroll-snap-type: x proximity; }
+
+  #ripple-booking .day { scroll-snap-align: start; }
+
+  #ripple-booking .days::-webkit-scrollbar { height: 0; }
+
+  #ripple-booking .day { flex: 0 0 auto; min-width: 62px; background: #FFFFFF; border: 1px solid var(--card-edge);
+    border-radius: 12px; padding: 10px 6px; text-align: center; cursor: pointer;
+    font-family: inherit; color: var(--ink); }
+
+  #ripple-booking .day .dow { display: block; font-size: 11px; color: var(--ink-dim); text-transform: uppercase;
+    letter-spacing: 0.06em; }
+
+  #ripple-booking .day .dnum { display: block; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700;
+    font-size: 18px; line-height: 1.2; margin-top: 2px; }
+
+  #ripple-booking .day .mon { display: block; font-size: 10.5px; color: var(--ink-dim); }
+
+  #ripple-booking .day[aria-pressed="true"] { border-color: var(--fuchsia); background: #E8F4E7; }
+
+  #ripple-booking .day[aria-pressed="true"] .dow, #ripple-booking .day[aria-pressed="true"] .mon { color: #17592B; }
+
+  #ripple-booking .otherDay { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12.5px; color: var(--ink-dim); }
+
+  #ripple-booking .otherDay input[type=date] { flex: 1; font: inherit; font-size: 15px; color: var(--ink);
+    background: #FFFFFF; border: 1px solid var(--card-edge); border-radius: 10px; padding: 10px 12px; }
+
+  #ripple-booking .otherDay input[type=date]::-webkit-calendar-picker-indicator { filter: opacity(0.6); }
+
+
+  #ripple-booking .slots { display: flex; gap: 10px; min-width: 0; }
+
+  #ripple-booking .slot { flex: 1; background: #FFFFFF; border: 1px solid var(--card-edge); border-radius: 14px;
+    padding: 16px 10px; text-align: center; cursor: pointer; font-family: inherit; color: var(--ink); }
+
+  #ripple-booking .slot .icon { font-size: 22px; display: block; margin-bottom: 6px; line-height: 1; }
+
+  #ripple-booking .slot .name { display: block; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700;
+    font-size: 15px; text-transform: uppercase; color: var(--ink); line-height: 1.2; }
+
+  #ripple-booking .slot .time { display: block; font-size: 12px; color: var(--ink-dim); margin-top: 3px; line-height: 1.2; }
+
+  #ripple-booking .slot[aria-pressed="true"] { border-color: var(--fuchsia); background: #E8F4E7; }
+
+  #ripple-booking .slot[aria-pressed="true"] .name { color: #fff; }
+
+  #ripple-booking .slot[aria-pressed="true"] .time { color: #17592B; }
+
+
+  #ripple-booking .consent { display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px;
+    color: var(--ink-dim); line-height: 1.5;
+    text-transform: none; letter-spacing: normal; font-weight: 400; margin-bottom: 0; }
+
+  #ripple-booking .consent input { width: 20px; height: 20px; flex: 0 0 20px; margin-top: 1px; accent-color: var(--fuchsia); }
+
+
+  #ripple-booking .cta { width: 100%; background: var(--fuchsia); color: #fff; font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700; font-size: 17px; letter-spacing: 0.05em; text-transform: uppercase;
+    border: none; border-radius: 14px; padding: 16px; cursor: pointer; }
+
+  #ripple-booking .cta:disabled { background: #DCE5D9; color: var(--ink-dim); cursor: not-allowed; }
+
+
+  #ripple-booking .err { font-size: 12.5px; color: var(--bad); font-weight: 700; }
+
+  #ripple-booking .fine { font-size: 11.5px; color: var(--ink-dim); text-align: center; line-height: 1.5; }
+
+
+  #ripple-booking .state { width: 100%; text-align: center; padding: 26px 18px; background: var(--card);
+    border: 1px solid var(--card-edge); border-radius: var(--radius); }
+
+  #ripple-booking .state h2 { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px; margin-bottom: 8px; }
+
+  #ripple-booking .state p { font-size: 14px; color: var(--ink-dim); line-height: 1.55; }
+
+  #ripple-booking .code-box { background: #FFFFFF; border: 1px solid var(--amber-deep); border-radius: 12px;
+    padding: 14px; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 18px;
+    letter-spacing: 0.12em; color: var(--amber); margin: 14px 0; }
+
+  #ripple-booking .tick { font-size: 34px; color: var(--good); }
+
+  #ripple-booking .hidden { display: none !important; }
+
+  /* 360px and below: the common Android width, and where the address row and
+     the two time cards start to crowd. */
+  @media (max-width: 380px) {
+    #ripple-booking .wrap { padding: 20px 14px 44px; gap: 16px; }
+
+    #ripple-booking .day { min-width: 56px; padding: 9px 5px; }
+    #ripple-booking .days { max-width: min(100%, calc(100vw - 28px)); }
+
+    #ripple-booking .day .dnum { font-size: 16px; }
+
+    #ripple-booking .addr input { flex: 0 1 84px; min-width: 70px; }
+
+    #ripple-booking .addr .known { font-size: 13px; padding: 12px 10px; }
+
+    #ripple-booking .slot { padding: 13px 6px; }
+
+    #ripple-booking .slot .name { font-size: 14px; }
+
+    #ripple-booking .slot .time { font-size: 11px; }
+
+    #ripple-booking .otherDay { flex-wrap: wrap; }
+
+    #ripple-booking .otherDay input[type=date] { min-width: 0; }
+
+  }
+
+  #ripple-booking .spinner { width: 26px; height: 26px; margin: 0 auto 12px; border-radius: 50%;
+    border: 3px solid rgba(157,180,196,0.25); border-top-color: var(--amber); animation: spin .9s linear infinite; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #ripple-booking .spinner { animation: none; }
+ }
+  #ripple-booking :focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 8px; }
+
+
+
+#ripple-booking .preview-badge{font:700 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#17592B;border:1px solid #CDDCCA;border-radius:30px;padding:9px 14px;text-align:center}
+#ripple-booking .brand{background:transparent;padding:0;justify-content:center}
+#ripple-booking h1{text-transform:none;font-size:28px;font-weight:800;letter-spacing:-.03em}
+#ripple-booking .won{box-shadow:0 12px 36px rgba(23,32,43,.06);padding:22px;background:linear-gradient(135deg,#EEF7E9,#FFFFFF)}
+#ripple-booking .won .tag{display:inline-block;color:#5A3F00;background:#F5C542;border-radius:30px;padding:6px 12px;font-size:10px}
+#ripple-booking .won .label{font-size:40px;font-weight:800;letter-spacing:-.04em}
+#ripple-booking form{padding:22px;background:white;border:1px solid #ECE8E1;border-radius:24px;box-shadow:0 16px 40px rgba(23,32,43,.06);gap:18px}
+#ripple-booking form>div>label{text-transform:none;letter-spacing:0;color:#17202B;font-size:13px}
+#ripple-booking .cta{text-transform:none;letter-spacing:-.01em;box-shadow:0 8px 20px rgba(46,158,79,.18)}
+#ripple-booking .cta:hover{background:#1F7A3A}
+#ripple-booking .slot[aria-pressed="true"] .name{color:#17592B}
+#ripple-booking .known{white-space:normal;line-height:1.5}
+#ripple-booking .powered{font:10px 'JetBrains Mono',monospace;letter-spacing:.2em;text-align:center;color:#9AA3AE}
+#ripple-booking .code-box{border-style:dashed;background:#F7F5F1}
+</style>
+<div id="ripple-booking">
+<div class="wrap">
+  <div class="brand" id="brand"><span class="wordmark" id="wordmark"></span></div>
+
+  <div class="state" id="loadingState"><div class="spinner"></div><p>Loading your offer…</p></div>
+
+  <div class="state hidden" id="errorState">
+    <h2 id="errorTitle">We couldn't find your offer</h2>
+    <p id="errorBody">Try scanning the QR code on your postcard again.</p><button type="button" id="retryBooking" class="cta" style="margin-top:18px">Try again</button>
+  </div>
+
+  <div id="main" class="hidden" style="width:100%;display:flex;flex-direction:column;gap:20px;align-items:center">
+    <div class="won">
+      <div class="tag">Your lawn care offer</div>
+      <div class="label" id="prizeLabel"></div>
+      <div class="sub" id="prizeSub"></div>
+    </div>
+
+    <h1>Book your lawn care</h1>
+    <p class="lede">Choose your preferred day and time. We’ll confirm your lawn care visit.</p>
+
+    <form id="bookForm" novalidate>
+      <div>
+        <label for="house">Your address</label>
+        <div class="addr">
+          <input type="text" id="house" inputmode="numeric" placeholder="No." autocomplete="address-line1" aria-label="House number">
+          <div class="known" id="knownAddr">—</div>
+        </div>
+        <div class="err hidden" id="houseErr"></div>
+      </div>
+
+      <div>
+        <label for="name">Your name</label>
+        <input type="text" id="name" placeholder="Jane Smith" autocomplete="name">
+        <div class="err hidden" id="nameErr"></div>
+      </div>
+
+      <div>
+        <label for="phone">Mobile</label>
+        <input type="tel" id="phone" placeholder="(555) 123-4567" autocomplete="tel">
+        <div class="err hidden" id="phoneErr"></div>
+      </div>
+
+      <div>
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="jane@example.com" autocomplete="email">
+      </div>
+
+      <div>
+        <label>Preferred day</label>
+        <div class="days" id="dayRow"></div>
+        <div class="otherDay">
+          <span>Another day</span>
+          <input type="date" id="otherDate" aria-label="Choose another day">
+        </div>
+        <div class="err hidden" id="dateErr"></div>
+      </div>
+
+      <div>
+        <label>Preferred time</label>
+        <div class="slots">
+          <button type="button" class="slot" id="slotMorning" aria-pressed="false">
+            <span class="icon">🌅</span><span class="name">Morning</span><span class="time">8am – 12pm</span>
+          </button>
+          <button type="button" class="slot" id="slotAfternoon" aria-pressed="false">
+            <span class="icon">🌇</span><span class="name">Afternoon</span><span class="time">12pm – 5pm</span>
+          </button>
+        </div>
+        <div class="err hidden" id="slotErr"></div>
+      </div>
+
+      <label class="consent">
+        <input type="checkbox" id="consent">
+        <span id="consentText">Text me appointment reminders and offers at this number. Message and data rates may apply. Reply STOP to opt out.</span>
+      </label>
+
+      <button type="submit" class="cta" id="submitBtn">Claim it — book my mow →</button>
+      <div role="alert" class="err hidden" id="formErr"></div>
+      <p class="fine">One offer per household. New customers within our service area.</p>
+    </form>
+  </div>
+
+  <div class="state hidden" id="doneState">
+    <div class="tick">✓</div>
+    <h2>Your lawn care visit is requested</h2>
+    <p id="doneBody"></p>
+    <div class="code-box" id="doneCode"></div>
+    <p class="fine">Show this code when we arrive. We'll call to confirm the exact time.</p>
+  </div>
+<div class="powered">POWERED BY BIZLAB</div></div>
+
+</div>
+<script>
+
+(function () {
+  // HighLevel can render custom code in a same-origin frame. Read the visible
+  // page URL when available; never take a token from another site's referrer.
+  function pageParameters() {
+    const urls=[location.href];
+    try { if(window.top!==window && window.top.location.href) urls.unshift(window.top.location.href); } catch (_) {}
+    try { if(window.parent!==window && window.parent.location.href) urls.push(window.parent.location.href); } catch (_) {}
+    try {
+      const ref=new URL(document.referrer);
+      if(ref.origin===location.origin && ref.pathname.replace(/\/$/,'')==='/lawn-care/booking-now') urls.push(ref.href);
+    } catch (_) {}
+    const combined=new URLSearchParams();
+    for(const raw of urls){try{const url=new URL(raw);for(const key of ['t','demo']){const value=url.searchParams.get(key);if(value&&!combined.has(key))combined.set(key,value);}}catch(_){}}
+    return combined;
+  }
+
+  const PAGE_PARAMS = pageParameters();
+  const DEMO = PAGE_PARAMS.get('demo') === '1';
+  const DEMO_TOKEN = 'demo-lawn-care';
+  const demoData = {
+    token: DEMO_TOKEN, street:'Oakwood Drive', brand:{name:'Evergreen Lawn Care · Demo',logo:null},
+    prize:{label:'$25 OFF',sub:'your first lawn care service'}, theme:{},
+    canBook:true,claimed:false,revealed:false,
+    bookUrl:'https://ripple.bizlabsolutions.ai/lawn-care/booking-now?demo=1',
+    address:{full:'123 Oakwood Drive',city:'Sample town',state:'',postal_code:''}
+  };
+  async function pageFetch(url, options) {
+    if (!DEMO) return fetch(url, options);
+    // Demo requests never reach Ripple or the CRM.
+    const route=String(url).split('/').pop();
+    let body={};try{body=JSON.parse(options.body||'{}');}catch(_){}
+    const data=route==='claim'?{ok:true,promoCode:'LAWN-DEMO',bookingWindow:body.booking_window,bookingDate:body.booking_date}:route==='reveal'?{ok:true}:demoData;
+    return {ok:true,status:200,json:async()=>data};
+  }
+
+  if(DEMO){const badge=document.createElement('div');badge.textContent='DEMO · SAMPLE OFFER · NO LIVE BOOKING';badge.style.cssText='padding:10px 16px;text-align:center;font:700 11px system-ui;color:#17592B;background:#E8F4E7;width:100%;';document.getElementById('ripple-booking').prepend(badge);}
+  const FN_BASE = 'https://dhizayohljxioxxzkhty.supabase.co/functions/v1/landing';
+  const root = document.getElementById('ripple-booking');
+  const $ = (id) => root.querySelector('[id="'+id+'"]');
+
+  const token = DEMO ? DEMO_TOKEN : (PAGE_PARAMS.get('t') || '').trim();
+
+  // Same theme contract as the landing page, so a client's two pages match.
+  const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+  function applyTheme(theme) {
+    if (!theme || typeof theme !== 'object') return;
+    const c = theme.colors || {};
+    const map = { bg: '--bg', card: '--card', accent: '--amber', cta: '--fuchsia', ink: '--ink' };
+    Object.keys(map).forEach((k) => {
+      if (c[k] && HEX.test(String(c[k]))) root.style.setProperty(map[k], c[k]);
+    });
+  }
+  let ctx = null;
+  let slot = null;
+
+  function fail(title, body) {
+    $('loadingState').classList.add('hidden');
+    $('main').classList.add('hidden');
+    $('errorTitle').textContent = title;
+    $('errorBody').textContent = body || '';
+    $('errorState').classList.remove('hidden');
+  }
+  const showErr = (id, msg) => { const e = $(id); e.textContent = msg; e.classList.remove('hidden'); };
+  const clearErr = (id) => $(id).classList.add('hidden');
+
+  function done(code, window_, dateIso) {
+    $('main').classList.add('hidden');
+    $('loadingState').classList.add('hidden');
+    const pretty = dateIso
+      ? new Date(dateIso + 'T00:00:00').toLocaleDateString(undefined,
+          { weekday: 'long', month: 'long', day: 'numeric' })
+      : null;
+    $('doneBody').textContent = pretty
+      ? 'We\u2019ve got you down for ' + pretty + ', ' + window_ + '. We\u2019ll call to confirm the time.'
+      : 'We\u2019ve got your ' + window_ + ' request and we\u2019ll be in touch to confirm.';
+    $('doneCode').textContent = code || '';
+    $('doneCode').classList.toggle('hidden', !code);
+    $('doneState').classList.remove('hidden');
+    if(DEMO){$('doneState').querySelector('h2').textContent='Demo complete';$('doneBody').textContent='This was a demonstration. No contact, claim or appointment was created.';}
+  }
+
+  async function load() {
+    if (!token) { fail('This link is incomplete', 'Please scan the QR code on your postcard again.'); return; }
+    let data;
+    try {
+      const res = await pageFetch(FN_BASE + '/visit', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token })
+      });
+      data = await res.json();
+      if (!res.ok) { fail('We couldn\u2019t find your offer', data.error || ''); return; }
+    } catch (e) {
+      fail('We couldn\u2019t reach the booking page', 'Check your connection and try again.');
+      return;
+    }
+    if (!data || !data.prize || typeof data.prize.label !== 'string') { fail('This offer could not be loaded', 'Please scan your postcard again.'); return; }
+    if(DEMO){$('name').value='Alex Morgan';$('phone').value='(202) 555-0147';$('email').value='alex.morgan@example.com';}
+    ctx = data;
+    applyTheme(data.theme);
+
+    if (data.brand && data.brand.logo) {
+      const img = document.createElement('img');
+      img.src = data.brand.logo; img.alt = data.brand.name || '';
+      img.addEventListener('error',()=>{ $('brand').textContent = data.brand.name || ''; });
+      $('brand').innerHTML = ''; $('brand').appendChild(img);
+    } else {
+      $('wordmark').textContent = (data.brand && data.brand.name) || '';
+    }
+
+    $('prizeLabel').textContent = data.prize.label;
+    $('prizeSub').textContent = data.prize.sub || '';
+
+    // Already claimed: show the code rather than a form that will be refused.
+    if (data.claimed) {
+      $('loadingState').classList.add('hidden');
+      done(data.promoCode, data.bookingWindow || 'visit', data.bookingDate);
+      return;
+    }
+
+    // A per-recipient QR gives us the exact address, so there is nothing to
+    // ask for — showing it read-only also reassures them we mailed THEM.
+    const a = data.address || {};
+    if (a.full) {
+      $('house').classList.add('hidden');
+      $('house').removeAttribute('required');
+      $('knownAddr').textContent = [a.full, a.city, a.state, a.postal_code].filter(Boolean).join(', ');
+      $('knownAddr').style.flex = '1 1 100%';
+    } else {
+      const known = [a.street, a.city, a.state, a.postal_code].filter(Boolean).join(', ');
+      $('knownAddr').textContent = known || 'your street';
+    }
+
+    buildDays();
+    $('loadingState').classList.add('hidden');
+    $('main').classList.remove('hidden');
+  }
+
+  // ---- Bookable days ------------------------------------------------------
+  //
+  // Two rules, in one place so the chips, the native picker and the submit
+  // check can never disagree:
+  //   1. LEAD_DAYS of notice - the crew's route for the next couple of days is
+  //      already set, so offering a day that gets refused is worse than not
+  //      offering it.
+  //   2. Weekdays only - preserves the existing Ripple booking rules.
+  const LEAD_DAYS = 2;
+
+  // Local calendar dates throughout. toISOString() converts to UTC first, so
+  // at 8pm Eastern it reports tomorrow - which would silently let someone book
+  // a day earlier than the lead time allows.
+  function isoOf(d) {
+    return d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0');
+  }
+  function fromIso(iso) {
+    const p = String(iso || '').split('-');
+    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  }
+  function isWeekend(d) { const g = d.getDay(); return g === 0 || g === 6; }
+
+  function earliestDate() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + LEAD_DAYS);
+    // If the lead time lands on a weekend, roll forward to Monday rather than
+    // showing a day that cannot be booked.
+    while (isWeekend(d)) d.setDate(d.getDate() + 1);
+    return d;
+  }
+
+  function whyNotBookable(iso) {
+    if (!iso) return 'Please choose a day.';
+    const d = fromIso(iso);
+    if (isNaN(d.getTime()) || isoOf(d) !== iso) return 'That date did not look right - please pick another.';
+    if (isWeekend(d)) return 'We only visit on weekdays - please pick Monday to Friday.';
+    const max = new Date(); max.setHours(0,0,0,0); max.setDate(max.getDate()+60);
+    if (d > max) return 'Please choose a day within the next 60 days.';
+    const min = earliestDate();
+    if (d < min) {
+      return 'We need a couple of days\u2019 notice. The earliest we can come is ' +
+        min.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' }) + '.';
+    }
+    return null;
+  }
+
+  let chosenDate = null;
+  function buildDays() {
+    const row = $('dayRow');
+    const out = [];
+    const d = earliestDate();
+    const dow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const mon = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    while (out.length < 6) {
+      if (!isWeekend(d)) {
+        const iso = isoOf(d);
+        out.push('<button type="button" class="day" data-date="' + iso + '" aria-pressed="false">' +
+          '<span class="dow">' + dow[d.getDay()] + '</span>' +
+          '<span class="dnum">' + d.getDate() + '</span>' +
+          '<span class="mon">' + mon[d.getMonth()] + '</span></button>');
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    row.innerHTML = out.join('');
+    row.querySelectorAll('[data-date]').forEach((b) => {
+      b.addEventListener('click', () => pickDate(b.dataset.date));
+    });
+
+    // The native picker enforces the floor, but min alone cannot exclude
+    // weekends - so anything chosen here is validated on the way in.
+    const other = $('otherDate');
+    const max = new Date(); max.setDate(max.getDate() + 60);
+    other.min = isoOf(earliestDate());
+    other.max = isoOf(max);
+    other.addEventListener('change', () => {
+      if (!other.value) return;
+      const problem = whyNotBookable(other.value);
+      if (problem) {
+        showErr('dateErr', problem);
+        other.value = '';
+        return;
+      }
+      pickDate(other.value, true);
+    });
+  }
+
+  function pickDate(iso, fromInput) {
+    const problem = whyNotBookable(iso);
+    if (problem) { showErr('dateErr', problem); return; }
+    chosenDate = iso;
+    root.querySelectorAll('[data-date]').forEach((b) => {
+      b.setAttribute('aria-pressed', String(b.dataset.date === iso));
+    });
+    if (!fromInput) $('otherDate').value = '';
+    clearErr('dateErr');
+  }
+
+  function pick(which) {
+    slot = which;
+    $('slotMorning').setAttribute('aria-pressed', String(which === 'morning'));
+    $('slotAfternoon').setAttribute('aria-pressed', String(which === 'afternoon'));
+    clearErr('slotErr');
+  }
+  $('slotMorning').addEventListener('click', () => pick('morning'));
+  $('slotAfternoon').addEventListener('click', () => pick('afternoon'));
+
+  $('bookForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    ['houseErr', 'nameErr', 'phoneErr', 'slotErr', 'dateErr', 'formErr'].forEach(clearErr);
+
+    const house = $('house').value.trim();
+    const name = $('name').value.trim();
+    const phone = $('phone').value.trim();
+    const email = $('email').value.trim();
+    const consent = $('consent').checked;
+
+    let bad = false;
+    const needsHouse = !(ctx && ctx.address && ctx.address.full);
+    if (needsHouse && !house) { showErr('houseErr', 'Please add your house number.'); bad = true; }
+    if (!name) { showErr('nameErr', 'Please tell us your name.'); bad = true; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('phoneErr', 'Please enter a valid email address.'); bad = true; }
+    if (!phone && !email) { showErr('phoneErr', 'Please leave a phone number or an email.'); bad = true; }
+    const dateProblem = whyNotBookable(chosenDate);
+    if (dateProblem) { showErr('dateErr', dateProblem); bad = true; }
+    if (!slot) { showErr('slotErr', 'Please choose morning or afternoon.'); bad = true; }
+    // Consent is never assumed from the presence of a phone number: an
+    // unticked box means this contact must not be texted.
+    if (bad) return;
+    if ($('submitBtn').disabled) return;
+
+    const btn = $('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Claiming…';
+
+    try {
+      const res = await pageFetch(FN_BASE + '/claim', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: token,
+          house_number: house,
+          name: name,
+          phone: phone,
+          email: email,
+          booking_window: slot,
+          booking_date: chosenDate,
+          consent_sms: consent,
+          // The exact wording shown, stored with the claim.
+          consent_text: consent ? $('consentText').textContent.trim() : null
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        btn.disabled = false;
+        btn.textContent = 'Claim it — book my mow →';
+        const fieldMap = { booking_date: 'dateErr', booking_window: 'slotErr',
+                           house_number: 'houseErr', name: 'nameErr', phone: 'phoneErr' };
+        if (data.field && fieldMap[data.field]) showErr(fieldMap[data.field], data.error);
+        else if (data.field && $(data.field + 'Err')) showErr(data.field + 'Err', data.error);
+        else showErr('formErr', data.error || 'Something went wrong. Please try again.');
+        return;
+      }
+      done(data.promoCode, data.bookingWindow, data.bookingDate);
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Claim it — book my mow →';
+      showErr('formErr', 'We couldn\u2019t reach the server. Please try again.');
+    }
+  });
+
+  $('retryBooking').addEventListener('click',()=>location.reload());
+  load();
+})();
+
+</script>
