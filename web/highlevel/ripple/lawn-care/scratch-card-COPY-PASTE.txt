@@ -142,7 +142,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
   </div>
 </div>
 
-<div class="trust"></div></div><div class="powered">Powered by BizLab · Mower v2</div>
+<div class="trust"></div></div><div class="powered">Powered by BizLab · Mower v3</div>
 
 </div>
 <script>
@@ -209,7 +209,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
   let visitToken = null;
   try { if(!DEMO) visitToken = localStorage.getItem(TOKEN_KEY); } catch (_) { /* private mode */ }
 
-  const root = document.getElementById('ripple-lawn');
+  const root = document.getElementById('ripple-lawn-v2');
   const $ = (id) => root.querySelector('[id="' + id + '"]');
   let prizeState = null;
 
@@ -226,7 +226,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
     const map = { bg: '--bg', card: '--card', accent: '--green-dark', cta: '--green', ink: '--ink' };
     Object.keys(map).forEach((k) => {
       if (c[k] && HEX.test(String(c[k]))) {
-        $("ripple-lawn").style.setProperty(map[k], c[k]);
+        root.style.setProperty(map[k], c[k]);
       }
     });
     const copy = theme.copy || {};
@@ -531,6 +531,9 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
       $('fine').textContent='One offer per household. Your code is issued when you book.';
     }catch(error){$('addressStatus').textContent=error.message||'Please try again.';}finally{button.disabled=false;}
   });
-  arrive();
+  arrive().catch(function(error){
+    console.error('Lawn card initialization failed', error);
+    showError('We could not load your offer', 'Please refresh this page. If this continues, contact the business for help.');
+  });
 })();
 </script>
