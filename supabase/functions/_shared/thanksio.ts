@@ -233,7 +233,9 @@ export interface SendRecipient {
 
 export interface SendPostcardParams {
   recipients: SendRecipient[];
-  message: string;
+  message?: string;
+  creativeId?: number;
+  postageClass?: 'first_class' | 'standard';
   size?: '4x6' | '6x9' | '6x11';   // default 4x6
   frontImageUrl?: string;
   imageTemplateId?: number;
@@ -271,19 +273,25 @@ export async function sendPostcard(
   p: SendPostcardParams,
 ): Promise<SendResult> {
   if (!p.recipients?.length) throw new ThanksIoError('no recipients to send to');
-  if (!p.message) throw new ThanksIoError('message is required');
+  if (!p.message && p.creativeId == null) throw new ThanksIoError('message is required without creative');
 
   const body: Record<string, unknown> = {
     recipients: p.recipients,
-    message: p.message,
     size: p.size ?? '4x6',
-    handwriting_realism: p.handwritingRealism ?? true,
   };
-
-  if (p.frontImageUrl) body.front_image_url = p.frontImageUrl;
-  if (p.imageTemplateId != null) body.image_template_id = p.imageTemplateId;
-  if (p.handwritingStyleId != null) body.handwriting_style_id = p.handwritingStyleId;
-  if (p.handwritingColor) body.handwriting_color = p.handwritingColor;
+  if (p.creativeId != null) {
+    // Thanks.io 2026 API: creative_id must NOT be combined with message,
+    // handwriting, background, or image-template fields.
+    body.creative_id = p.creativeId;
+  } else {
+    body.message = p.message;
+    body.handwriting_realism = p.handwritingRealism ?? true;
+    if (p.frontImageUrl) body.front_image_url = p.frontImageUrl;
+    if (p.imageTemplateId != null) body.image_template_id = p.imageTemplateId;
+    if (p.handwritingStyleId != null) body.handwriting_style_id = p.handwritingStyleId;
+    if (p.handwritingColor) body.handwriting_color = p.handwritingColor;
+  }
+  if(p.postageClass) body.postage_class = p.postageClass;
   if (p.qrcodeUrl) body.qrcode_url = p.qrcodeUrl;
   if (p.subAccount != null) body.sub_account = p.subAccount;
   if (p.sendStandardMail != null) body.send_standard_mail = p.sendStandardMail;
@@ -309,3 +317,4 @@ export async function listHandwritingStyles(token: string): Promise<any[]> {
   const r = await call(token, 'GET', '/handwriting-styles');
   return r.data ?? r ?? [];
 }
+
