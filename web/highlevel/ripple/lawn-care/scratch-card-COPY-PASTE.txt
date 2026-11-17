@@ -8,76 +8,77 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  #ripple-lawn{
+  #ripple-lawn-v2{
     --bg:#F7F5F1; --card:#fff; --line:#ECE8E1; --ink:#17202B; --muted:#6B7683; --dim:#9AA3AE;
     --green:#2E9E4F; --green-deep:#1F7A3A; --green-dark:#17592B; --sun:#F5C542; --soil:#8A6239;
     --font:'Plus Jakarta Sans',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
   }
-  #ripple-lawn *{box-sizing:border-box;margin:0;padding:0}
+  #ripple-lawn-v2 *{box-sizing:border-box;margin:0;padding:0}
   
-  #ripple-lawn{background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;padding:28px 18px 40px;overscroll-behavior:none;touch-action:manipulation}
-  #ripple-lawn .brand{font-weight:800;font-size:15px;letter-spacing:-.01em;color:var(--green-dark);display:flex;align-items:center;gap:8px;margin-bottom:18px}
-  #ripple-lawn .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--green)}
-  #ripple-lawn h1{font-size:clamp(26px,7vw,36px);font-weight:800;letter-spacing:-.02em;line-height:1.05;text-align:center}
-  #ripple-lawn .sub{color:var(--muted);text-align:center;margin:10px 0 22px;font-size:15.5px;max-width:34ch}
+  #ripple-lawn-v2{background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;padding:28px 18px 40px;overscroll-behavior:none;touch-action:manipulation}
+  #ripple-lawn-v2 .brand{font-weight:800;font-size:15px;letter-spacing:-.01em;color:var(--green-dark);display:flex;align-items:center;gap:8px;margin-bottom:18px}
+  #ripple-lawn-v2 .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--green)}
+  #ripple-lawn-v2 h1{font-size:clamp(26px,7vw,36px);font-weight:800;letter-spacing:-.02em;line-height:1.05;text-align:center}
+  #ripple-lawn-v2 .sub{color:var(--muted);text-align:center;margin:10px 0 22px;font-size:15.5px;max-width:34ch}
 
-  #ripple-lawn .card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:0 1px 2px rgba(23,32,43,.04),0 18px 44px rgba(23,32,43,.10);padding:16px;position:relative}
-  #ripple-lawn .lawn{position:relative;width:100%;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:#5FB86E;touch-action:none;cursor:none;user-select:none;-webkit-user-select:none}
-  #ripple-lawn .lawn.done{cursor:default}
-  #ripple-lawn canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-  #ripple-lawn #cut{z-index:1}#ripple-lawn #grass{z-index:2}#ripple-lawn #fx{z-index:3;pointer-events:none}
-  #ripple-lawn .prize{position:absolute;inset:0;z-index:0;display:grid;place-items:center;text-align:center;padding:20px}
-  #ripple-lawn .prize .big{font-size:clamp(40px,14vw,64px);font-weight:800;letter-spacing:-.04em;color:#fff;line-height:1;text-shadow:0 3px 0 rgba(0,0,0,.18)}
-  #ripple-lawn .prize .lbl{font-weight:700;color:#fff;margin-top:6px;font-size:16px;text-shadow:0 2px 0 rgba(0,0,0,.18)}
-  #ripple-lawn .prize .tag{display:inline-block;margin-bottom:10px;background:var(--sun);color:#5A3F00;font-family:var(--mono);font-size:10px;letter-spacing:.2em;padding:5px 10px;border-radius:999px}
+  #ripple-lawn-v2 .card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:0 1px 2px rgba(23,32,43,.04),0 18px 44px rgba(23,32,43,.10);padding:16px;position:relative}
+  #ripple-lawn-v2 .lawn{position:relative;width:100%;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:#5FB86E;touch-action:none;cursor:none;user-select:none;-webkit-user-select:none}
+  #ripple-lawn-v2 .lawn.done{cursor:default}
+  #ripple-lawn-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #ripple-lawn-v2 #cut{z-index:1}#ripple-lawn-v2 #grass{z-index:2}#ripple-lawn-v2 #fx{z-index:3;pointer-events:none}
+  #ripple-lawn-v2 .prize{position:absolute;inset:0;z-index:0;display:grid;place-items:center;text-align:center;padding:20px}
+  #ripple-lawn-v2 .prize .big{font-size:clamp(40px,14vw,64px);font-weight:800;letter-spacing:-.04em;color:#fff;line-height:1;text-shadow:0 3px 0 rgba(0,0,0,.18)}
+  #ripple-lawn-v2 .prize .lbl{font-weight:700;color:#fff;margin-top:6px;font-size:16px;text-shadow:0 2px 0 rgba(0,0,0,.18)}
+  #ripple-lawn-v2 .prize .tag{display:inline-block;margin-bottom:10px;background:var(--sun);color:#5A3F00;font-family:var(--mono);font-size:10px;letter-spacing:.2em;padding:5px 10px;border-radius:999px}
 
-  #ripple-lawn .mower{position:absolute;z-index:4;width:92px;height:70px;pointer-events:none;transform:translate(-46px,-40px);opacity:0;transition:opacity .2s}
-  #ripple-lawn .lawn.active .mower{opacity:1}
-  #ripple-lawn .mower .wheel{transform-origin:center;}
-  #ripple-lawn .mower.moving .wheel{animation:rippleLawnSpin .25s linear infinite}
-  #ripple-lawn .mower.moving .blade{animation:rippleLawnSpin .08s linear infinite;transform-origin:center}
+  #ripple-lawn-v2 .mower{position:absolute;z-index:4;width:92px;height:70px;pointer-events:none;transform:translate(-46px,-40px);opacity:0;transition:opacity .2s}
+  #ripple-lawn-v2 .lawn.active .mower{opacity:1}
+  #ripple-lawn-v2 .mower .wheel{transform-origin:center;}
+  #ripple-lawn-v2 .mower.moving .wheel{animation:rippleLawnSpin .25s linear infinite}
+  #ripple-lawn-v2 .mower.moving .blade{animation:rippleLawnSpin .08s linear infinite;transform-origin:center}
   @keyframes rippleLawnSpin{to{transform:rotate(360deg)}}
-  #ripple-lawn .hint{position:absolute;inset:0;z-index:5;display:grid;place-items:center;pointer-events:none;transition:opacity .3s}
-  #ripple-lawn .hint span{background:rgba(23,32,43,.78);color:#fff;font-weight:700;font-size:14px;padding:10px 16px;border-radius:999px;display:flex;align-items:center;gap:8px;animation:rippleLawnBob 1.4s ease-in-out infinite}
+  #ripple-lawn-v2 .hint{position:absolute;inset:0;z-index:5;display:grid;place-items:center;pointer-events:none;transition:opacity .3s}
+  #ripple-lawn-v2 .hint span{background:rgba(23,32,43,.78);color:#fff;font-weight:700;font-size:14px;padding:10px 16px;border-radius:999px;display:flex;align-items:center;gap:8px;animation:rippleLawnBob 1.4s ease-in-out infinite}
   @keyframes rippleLawnBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
-  #ripple-lawn .lawn.active .hint{opacity:0}
+  #ripple-lawn-v2 .lawn.active .hint{opacity:0}
 
-  #ripple-lawn .meter{margin-top:14px}
-  #ripple-lawn .meter .row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
-  #ripple-lawn .meter .row b{color:var(--green-dark)}
-  #ripple-lawn .track{height:10px;background:#EEF4EA;border-radius:999px;overflow:hidden;border:1px solid #DDE8D7}
-  #ripple-lawn .fill{height:100%;width:0;background:linear-gradient(90deg,var(--green),#7CD08A);border-radius:999px;transition:width .15s}
+  #ripple-lawn-v2 .meter{margin-top:14px}
+  #ripple-lawn-v2 .meter .row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+  #ripple-lawn-v2 .meter .row b{color:var(--green-dark)}
+  #ripple-lawn-v2 .track{height:10px;background:#EEF4EA;border-radius:999px;overflow:hidden;border:1px solid #DDE8D7}
+  #ripple-lawn-v2 .fill{height:100%;width:0;background:linear-gradient(90deg,var(--green),#7CD08A);border-radius:999px;transition:width .15s}
 
-  #ripple-lawn .result{opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s;margin-top:18px;text-align:center;pointer-events:none;height:0;overflow:hidden}
-  #ripple-lawn .result.show{opacity:1;transform:none;pointer-events:auto;height:auto}
-  #ripple-lawn .result .code{font-family:var(--mono);font-size:13px;letter-spacing:.14em;background:#F7F5F1;border:1px dashed #D9D4CB;border-radius:10px;padding:10px 14px;display:inline-block;margin:6px 0 14px;color:var(--ink)}
-  #ripple-lawn .btn{display:flex;width:100%;justify-content:center;align-items:center;gap:8px;text-decoration:none;background:var(--green);color:#fff;font-weight:800;font-size:17px;padding:16px 22px;border-radius:14px;border:0;cursor:pointer;box-shadow:0 10px 24px rgba(46,158,79,.28);transition:transform .15s,background .15s}
-  #ripple-lawn .btn:hover{background:var(--green-deep);transform:translateY(-1px)}
-  #ripple-lawn .fine{font-size:12px;color:var(--dim);margin-top:10px}
-  #ripple-lawn .powered{margin-top:22px;font-family:var(--mono);font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim)}
+  #ripple-lawn-v2 .result{opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s;margin-top:18px;text-align:center;pointer-events:none;height:0;overflow:hidden}
+  #ripple-lawn-v2 .result.show{opacity:1;transform:none;pointer-events:auto;height:auto}
+  #ripple-lawn-v2 .result .code{font-family:var(--mono);font-size:13px;letter-spacing:.14em;background:#F7F5F1;border:1px dashed #D9D4CB;border-radius:10px;padding:10px 14px;display:inline-block;margin:6px 0 14px;color:var(--ink)}
+  #ripple-lawn-v2 .btn{display:flex;width:100%;justify-content:center;align-items:center;gap:8px;text-decoration:none;background:var(--green);color:#fff;font-weight:800;font-size:17px;padding:16px 22px;border-radius:14px;border:0;cursor:pointer;box-shadow:0 10px 24px rgba(46,158,79,.28);transition:transform .15s,background .15s}
+  #ripple-lawn-v2 .btn:hover{background:var(--green-deep);transform:translateY(-1px)}
+  #ripple-lawn-v2 .fine{font-size:12px;color:var(--dim);margin-top:10px}
+  #ripple-lawn-v2 .powered{margin-top:22px;font-family:var(--mono);font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim)}
 
-#ripple-lawn .hidden{display:none!important} #ripple-lawn #offer{width:100%;max-width:420px} #ripple-lawn .brand img{max-width:220px;max-height:65px} #ripple-lawn .eyebrow{display:block;text-align:center;margin-bottom:12px} #ripple-lawn #revealOffer{margin-top:14px;padding:10px;background:white;border:1px solid #ccc;border-radius:8px;cursor:pointer} #ripple-lawn :focus-visible{outline:3px solid #17592B;outline-offset:3px} @media(prefers-reduced-motion:reduce){#ripple-lawn *{animation:none!important;transition:none!important}}
+#ripple-lawn-v2 .hidden{display:none!important} #ripple-lawn-v2 #offer{width:100%;max-width:420px} #ripple-lawn-v2 .brand img{max-width:220px;max-height:65px} #ripple-lawn-v2 .eyebrow{display:block;text-align:center;margin-bottom:12px} #ripple-lawn-v2 #revealOffer{margin-top:14px;padding:10px;background:white;border:1px solid #ccc;border-radius:8px;cursor:pointer} #ripple-lawn-v2 :focus-visible{outline:3px solid #17592B;outline-offset:3px} @media(prefers-reduced-motion:reduce){#ripple-lawn-v2 *{animation:none!important;transition:none!important}}
 
-#ripple-lawn{width:100%;min-width:0;min-height:100vh}
-#ripple-lawn .sub{margin:10px auto 22px;width:100%;max-width:36ch;text-align:center;line-height:1.5}
-#ripple-lawn .brand{justify-content:center;min-height:66px}
-#ripple-lawn .brand img{display:block;max-width:248px;max-height:80px;object-fit:contain}
-#ripple-lawn .lawn.done .hint{display:none}
-#ripple-lawn .prize{visibility:hidden}
-#ripple-lawn .lawn.ready .prize{visibility:visible}
-#ripple-lawn .result:not(.show){visibility:hidden}
-#ripple-lawn .result .code{margin:10px 0 18px}
-#ripple-lawn .prize .big{font-size:clamp(26px,8vw,48px);overflow-wrap:anywhere}
-#ripple-lawn .btn[aria-disabled="true"]{background:#DCE5D9;color:#475444;pointer-events:none;box-shadow:none}
-#ripple-lawn .fine{color:#6B7683;line-height:1.5}
-#ripple-lawn .trust{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:18px;font-size:12px;text-align:center}
-#ripple-lawn #errorState{max-width:420px;text-align:center;padding:24px;background:white;border:1px solid #ECE8E1;border-radius:20px}
-#ripple-lawn #errorBody{margin-top:10px;line-height:1.5}
-#ripple-lawn #copyBtn{padding:8px 12px;margin-left:8px;border:1px solid #D9D4CB;border-radius:8px;background:white;cursor:pointer}
-.c-section:has(#ripple-lawn),.c-row:has(#ripple-lawn),.c-column:has(#ripple-lawn),.c-custom-code:has(#ripple-lawn){min-width:0!important;max-width:100%!important}
-#ripple-lawn #fallbackAddress input{width:100%;padding:12px;font:inherit;border:1px solid #DDE8D7;border-radius:10px} #ripple-lawn #fallbackAddress button{padding:12px;background:#2E9E4F;color:white;border:0;border-radius:10px;cursor:pointer}
+#ripple-lawn-v2{width:100%;min-width:0;min-height:100vh}
+#ripple-lawn-v2 .sub{margin:10px auto 22px;width:100%;max-width:36ch;text-align:center;line-height:1.5}
+#ripple-lawn-v2 .brand{justify-content:center;min-height:66px}
+#ripple-lawn-v2 .brand img{display:block;max-width:248px;max-height:80px;object-fit:contain}
+#ripple-lawn-v2 .lawn.done .hint{display:none}
+#ripple-lawn-v2 .prize{visibility:hidden}
+#ripple-lawn-v2 .lawn.ready .prize{visibility:hidden}
+#ripple-lawn-v2 .lawn.started .prize,#ripple-lawn-v2 .lawn.done .prize{visibility:visible}
+#ripple-lawn-v2 .result:not(.show){visibility:hidden}
+#ripple-lawn-v2 .result .code{margin:10px 0 18px}
+#ripple-lawn-v2 .prize .big{font-size:clamp(26px,8vw,48px);overflow-wrap:anywhere}
+#ripple-lawn-v2 .btn[aria-disabled="true"]{background:#DCE5D9;color:#475444;pointer-events:none;box-shadow:none}
+#ripple-lawn-v2 .fine{color:#6B7683;line-height:1.5}
+#ripple-lawn-v2 .trust{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:18px;font-size:12px;text-align:center}
+#ripple-lawn-v2 #errorState{max-width:420px;text-align:center;padding:24px;background:white;border:1px solid #ECE8E1;border-radius:20px}
+#ripple-lawn-v2 #errorBody{margin-top:10px;line-height:1.5}
+#ripple-lawn-v2 #copyBtn{padding:8px 12px;margin-left:8px;border:1px solid #D9D4CB;border-radius:8px;background:white;cursor:pointer}
+.c-section:has(#ripple-lawn-v2),.c-row:has(#ripple-lawn-v2),.c-column:has(#ripple-lawn-v2),.c-custom-code:has(#ripple-lawn-v2){min-width:0!important;max-width:100%!important}
+#ripple-lawn-v2 #fallbackAddress input{width:100%;padding:12px;font:inherit;border:1px solid #DDE8D7;border-radius:10px} #ripple-lawn-v2 #fallbackAddress button{padding:12px;background:#2E9E4F;color:white;border:0;border-radius:10px;cursor:pointer}
 </style>
-<div id="ripple-lawn">
+<div id="ripple-lawn-v2">
 
 <div class="brand" id="brand"><span id="wordmark"></span></div><div id="loadingState" role="status">Checking your offer…</div><div id="errorState" class="hidden" role="alert"><h2 id="errorTitle"></h2><p id="errorBody"></p><button id="retryOffer" type="button" style="margin-top:16px;padding:12px 18px;border-radius:10px;border:0;background:#2E9E4F;color:white;cursor:pointer">Try again</button></div><div id="offer" class="hidden"><span class="eyebrow">Neighbor-only offer</span>
 <h1>Mow the lawn.<br>Reveal your offer on <span id="streetName">your street</span>.</h1>
@@ -141,7 +142,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
   </div>
 </div>
 
-<div class="trust"></div></div><div class="powered">Powered by BizLab</div>
+<div class="trust"></div></div><div class="powered">Powered by BizLab · Mower v2</div>
 
 </div>
 <script>
@@ -167,7 +168,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
   // ==========================================================================
   // Config
   // ==========================================================================
-  if(DEMO){const badge=document.createElement('div');badge.textContent='DEMO · SAMPLE OFFER · NO LIVE BOOKING';badge.style.cssText='padding:10px 16px;text-align:center;font:700 11px system-ui;color:#17592B;background:#E8F4E7;width:100%;';document.getElementById('ripple-lawn').prepend(badge);}
+  if(DEMO){const badge=document.createElement('div');badge.textContent='DEMO · SAMPLE OFFER · NO LIVE BOOKING';badge.style.cssText='padding:10px 16px;text-align:center;font:700 11px system-ui;color:#17592B;background:#E8F4E7;width:100%;';document.getElementById('ripple-lawn-v2').prepend(badge);}
   const FN_BASE = 'https://dhizayohljxioxxzkhty.supabase.co/functions/v1/landing';
   // The booking page comes back from /arrive (per-client override, else the
   // platform default). This constant is only a fallback if the server omits it.
@@ -229,11 +230,11 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
       }
     });
     const copy = theme.copy || {};
-    if (copy.eyebrow) document.querySelector('#ripple-lawn .eyebrow').textContent = copy.eyebrow;
-    if (copy.sub) document.querySelector('#ripple-lawn .sub').textContent = copy.sub;
+    if (copy.eyebrow) document.querySelector('#ripple-lawn-v2 .eyebrow').textContent = copy.eyebrow;
+    if (copy.sub) document.querySelector('#ripple-lawn-v2 .sub').textContent = copy.sub;
     if (copy.cta) $('ctaBtn').textContent = copy.cta + ' \u2192';
     if (Array.isArray(copy.trust) && copy.trust.length) {
-      document.querySelector('#ripple-lawn .trust').innerHTML =
+      document.querySelector('#ripple-lawn-v2 .trust').innerHTML =
         copy.trust.slice(0, 4).map((t) => '<span>' + String(t).replace(/[<>&]/g, '') + '</span>').join('');
     }
   }
@@ -242,7 +243,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
   function applyHeadline(theme, street) {
     const tpl = (theme && theme.copy && theme.copy.headline) || null;
     if (!tpl) { if (street) $('streetName').textContent = street; return; }
-    const h1 = document.querySelector('#ripple-lawn h1');
+    const h1 = document.querySelector('#ripple-lawn-v2 h1');
     const safe = String(tpl).replace(/[<>&]/g, '');
     const parts = safe.split('{street}');
     h1.textContent = '';
@@ -356,6 +357,10 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
       $('fine').textContent = 'Enter your service address to continue with this location’s offer.';
     }
     if (data.claimed) return;
+    done=false; mowed=0; lawnInitialized=false; mowGestureStarted=false; mowerDistance=0;
+    lawn.classList.remove('done','active','started','ready');
+    $('reveal').classList.remove('show');
+    fill.style.width='0%'; pct.textContent='0%';
     size();
     // Replay the mowing interaction on every unclaimed visit. The backend keeps
     // the same prize and records reveal only once; revisiting cannot reroll it.
@@ -385,7 +390,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
   var cutC = $('cut'), grassC = $('grass'), fxC = $('fx');
   var cut = cutC.getContext('2d'), grass = grassC.getContext('2d'), fx = fxC.getContext('2d');
   var mower = $('mower'), fill = $('fill'), pct = $('pct');
-  var W, H, dpr = Math.min(window.devicePixelRatio||1, 2), done = false, mowed = 0, lawnInitialized = false;
+  var W, H, dpr = Math.min(window.devicePixelRatio||1, 2), done = false, mowed = 0, lawnInitialized = false, mowGestureStarted = false, mowerDistance = 0;
   var MOW_W = 54; // cut width in CSS px
 
   function size(){
@@ -393,6 +398,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
     var previous=document.createElement('canvas'); previous.width=grassC.width; previous.height=grassC.height;
     if(lawnInitialized && previous.width) previous.getContext('2d').drawImage(grassC,0,0);
     var rect = lawn.getBoundingClientRect(); W = rect.width; H = rect.height;
+    if (W < 1 || H < 1) return;
     [cutC,grassC,fxC].forEach(function(c){ c.width = W*dpr; c.height = H*dpr; c.getContext('2d').setTransform(dpr,0,0,dpr,0,0); });
     drawCutLayer(); drawGrass();
     if (done) grass.clearRect(0,0,W,H);
@@ -464,7 +470,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
     grass.beginPath(); grass.moveTo(a.x,a.y); grass.lineTo(b.x,b.y); grass.stroke();
   }
   function measure(){
-    if (done || !lawnInitialized) return;
+    if (done || !lawnInitialized || !mowGestureStarted || mowerDistance < 10) return;
     var data = grass.getImageData(0,0,grassC.width,grassC.height).data, clear=0, step=16;
     for (var i=3;i<data.length;i+=4*step) if (data[i]<40) clear++;
     mowed = clear/(data.length/(4*step));
@@ -472,7 +478,8 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
     fill.style.width = p+'%'; pct.textContent = p+'%';
     if (mowed >= 0.6) finish();
   }
-  function finish(record=true){
+  function finish(record=true, explicitReveal=false){
+    if (!explicitReveal && (!mowGestureStarted || mowerDistance < 10)) return;
     if (done || !prizeState || prizeState.claimed) return;
     if(record && prizeState.token) pageFetch(FN_BASE+"/reveal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:prizeState.token}),keepalive:true}).catch(function(){});
     $("revealOffer").hidden=true;
@@ -489,7 +496,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
   }
 
   lawn.addEventListener('pointerdown', function(e){
-    if (done || !prizeState || !lawnInitialized || !e.isPrimary) return; lawn.setPointerCapture(e.pointerId); lawn.classList.add('active');
+    if (done || !prizeState || !lawnInitialized || !e.isPrimary) return; lawn.setPointerCapture(e.pointerId); mowGestureStarted=true; lawn.classList.add('active','started');
     last = pos(e); mower.style.left=last.x+'px'; mower.style.top=last.y+'px'; cutAt(last,last);
   });
   lawn.addEventListener('pointermove', function(e){
@@ -497,6 +504,7 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
     if (!done){ mower.style.left=p.x+'px'; mower.style.top=p.y+'px'; }
     if (!last || done) return;
     var vx=p.x-last.x, vy=p.y-last.y;
+    mowerDistance += Math.hypot(vx,vy);
     cutAt(last,p); spawn(p.x,p.y,vx,vy);
     mower.classList.add('moving'); clearTimeout(moveTimer); moveTimer=setTimeout(function(){mower.classList.remove('moving')},120);
     if (vx<0) mower.style.transform='translate(-46px,-40px) scaleX(-1)'; else if (vx>0) mower.style.transform='translate(-46px,-40px)';
@@ -507,9 +515,10 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
   lawn.addEventListener('pointerup', up); lawn.addEventListener('pointercancel', up); lawn.addEventListener('lostpointercapture', up); lawn.addEventListener('pointerleave', function(){ last=null; });
 
 
-  $('revealOffer').addEventListener('click',function(){finish();});
+  $('revealOffer').addEventListener('click',function(){finish(true,true);});
   $('copyBtn').addEventListener('click',async function(){try {await navigator.clipboard.writeText($('promoCode').textContent);this.textContent='Copied!';}catch(_){this.textContent='Select code to copy';}});
   window.addEventListener('resize',size);
+  if (window.ResizeObserver) { const observer=new ResizeObserver(()=>size()); observer.observe(lawn); }
   $('retryOffer').addEventListener('click', function(){location.reload();});
   $('fallbackAddress').addEventListener('submit',async function(e){
     e.preventDefault();const button=this.querySelector('button');if(button.disabled)return;button.disabled=true;
