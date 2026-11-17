@@ -1,0 +1,536 @@
+<!-- LAWN CARE SCRATCH PAGE ONLY: /lawn-care/scratch-card. Do not paste on booking-now. -->
+<!-- Ripple Lawn Care scratch card — paste this entire fragment into one HighLevel Custom Code element.
+Uses the existing landing/arrive and landing/reveal endpoints. Configure this location's
+logo, prize pool and booking URL in Ripple. Publish on a separate lawn-care page.
+Codes are issued by the existing booking/claim flow, never generated in this page. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  #ripple-lawn-v2{
+    --bg:#F7F5F1; --card:#fff; --line:#ECE8E1; --ink:#17202B; --muted:#6B7683; --dim:#9AA3AE;
+    --green:#2E9E4F; --green-deep:#1F7A3A; --green-dark:#17592B; --sun:#F5C542; --soil:#8A6239;
+    --font:'Plus Jakarta Sans',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  #ripple-lawn-v2 *{box-sizing:border-box;margin:0;padding:0}
+  
+  #ripple-lawn-v2{background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;align-items:center;padding:28px 18px 40px;overscroll-behavior:none;touch-action:manipulation}
+  #ripple-lawn-v2 .brand{font-weight:800;font-size:15px;letter-spacing:-.01em;color:var(--green-dark);display:flex;align-items:center;gap:8px;margin-bottom:18px}
+  #ripple-lawn-v2 .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--green)}
+  #ripple-lawn-v2 h1{font-size:clamp(26px,7vw,36px);font-weight:800;letter-spacing:-.02em;line-height:1.05;text-align:center}
+  #ripple-lawn-v2 .sub{color:var(--muted);text-align:center;margin:10px 0 22px;font-size:15.5px;max-width:34ch}
+
+  #ripple-lawn-v2 .card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:0 1px 2px rgba(23,32,43,.04),0 18px 44px rgba(23,32,43,.10);padding:16px;position:relative}
+  #ripple-lawn-v2 .lawn{position:relative;width:100%;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:#5FB86E;touch-action:none;cursor:none;user-select:none;-webkit-user-select:none}
+  #ripple-lawn-v2 .lawn.done{cursor:default}
+  #ripple-lawn-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #ripple-lawn-v2 #cut{z-index:1}#ripple-lawn-v2 #grass{z-index:2}#ripple-lawn-v2 #fx{z-index:3;pointer-events:none}
+  #ripple-lawn-v2 .prize{position:absolute;inset:0;z-index:0;display:grid;place-items:center;text-align:center;padding:20px}
+  #ripple-lawn-v2 .prize .big{font-size:clamp(40px,14vw,64px);font-weight:800;letter-spacing:-.04em;color:#fff;line-height:1;text-shadow:0 3px 0 rgba(0,0,0,.18)}
+  #ripple-lawn-v2 .prize .lbl{font-weight:700;color:#fff;margin-top:6px;font-size:16px;text-shadow:0 2px 0 rgba(0,0,0,.18)}
+  #ripple-lawn-v2 .prize .tag{display:inline-block;margin-bottom:10px;background:var(--sun);color:#5A3F00;font-family:var(--mono);font-size:10px;letter-spacing:.2em;padding:5px 10px;border-radius:999px}
+
+  #ripple-lawn-v2 .mower{position:absolute;z-index:4;width:92px;height:70px;pointer-events:none;transform:translate(-46px,-40px);opacity:0;transition:opacity .2s}
+  #ripple-lawn-v2 .lawn.active .mower{opacity:1}
+  #ripple-lawn-v2 .mower .wheel{transform-origin:center;}
+  #ripple-lawn-v2 .mower.moving .wheel{animation:rippleLawnSpin .25s linear infinite}
+  #ripple-lawn-v2 .mower.moving .blade{animation:rippleLawnSpin .08s linear infinite;transform-origin:center}
+  @keyframes rippleLawnSpin{to{transform:rotate(360deg)}}
+  #ripple-lawn-v2 .hint{position:absolute;inset:0;z-index:5;display:grid;place-items:center;pointer-events:none;transition:opacity .3s}
+  #ripple-lawn-v2 .hint span{background:rgba(23,32,43,.78);color:#fff;font-weight:700;font-size:14px;padding:10px 16px;border-radius:999px;display:flex;align-items:center;gap:8px;animation:rippleLawnBob 1.4s ease-in-out infinite}
+  @keyframes rippleLawnBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  #ripple-lawn-v2 .lawn.active .hint{opacity:0}
+
+  #ripple-lawn-v2 .meter{margin-top:14px}
+  #ripple-lawn-v2 .meter .row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:8px}
+  #ripple-lawn-v2 .meter .row b{color:var(--green-dark)}
+  #ripple-lawn-v2 .track{height:10px;background:#EEF4EA;border-radius:999px;overflow:hidden;border:1px solid #DDE8D7}
+  #ripple-lawn-v2 .fill{height:100%;width:0;background:linear-gradient(90deg,var(--green),#7CD08A);border-radius:999px;transition:width .15s}
+
+  #ripple-lawn-v2 .result{opacity:0;transform:translateY(8px);transition:opacity .4s,transform .4s;margin-top:18px;text-align:center;pointer-events:none;height:0;overflow:hidden}
+  #ripple-lawn-v2 .result.show{opacity:1;transform:none;pointer-events:auto;height:auto}
+  #ripple-lawn-v2 .result .code{font-family:var(--mono);font-size:13px;letter-spacing:.14em;background:#F7F5F1;border:1px dashed #D9D4CB;border-radius:10px;padding:10px 14px;display:inline-block;margin:6px 0 14px;color:var(--ink)}
+  #ripple-lawn-v2 .btn{display:flex;width:100%;justify-content:center;align-items:center;gap:8px;text-decoration:none;background:var(--green);color:#fff;font-weight:800;font-size:17px;padding:16px 22px;border-radius:14px;border:0;cursor:pointer;box-shadow:0 10px 24px rgba(46,158,79,.28);transition:transform .15s,background .15s}
+  #ripple-lawn-v2 .btn:hover{background:var(--green-deep);transform:translateY(-1px)}
+  #ripple-lawn-v2 .fine{font-size:12px;color:var(--dim);margin-top:10px}
+  #ripple-lawn-v2 .powered{margin-top:22px;font-family:var(--mono);font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--dim)}
+
+#ripple-lawn-v2 .hidden{display:none!important} #ripple-lawn-v2 #offer{width:100%;max-width:420px} #ripple-lawn-v2 .brand img{max-width:220px;max-height:65px} #ripple-lawn-v2 .eyebrow{display:block;text-align:center;margin-bottom:12px} #ripple-lawn-v2 #revealOffer{margin-top:14px;padding:10px;background:white;border:1px solid #ccc;border-radius:8px;cursor:pointer} #ripple-lawn-v2 :focus-visible{outline:3px solid #17592B;outline-offset:3px} @media(prefers-reduced-motion:reduce){#ripple-lawn-v2 *{animation:none!important;transition:none!important}}
+
+#ripple-lawn-v2{width:100%;min-width:0;min-height:100vh}
+#ripple-lawn-v2 .sub{margin:10px auto 22px;width:100%;max-width:36ch;text-align:center;line-height:1.5}
+#ripple-lawn-v2 .brand{justify-content:center;min-height:66px}
+#ripple-lawn-v2 .brand img{display:block;max-width:248px;max-height:80px;object-fit:contain}
+#ripple-lawn-v2 .lawn.done .hint{display:none}
+#ripple-lawn-v2 .prize{visibility:hidden}
+#ripple-lawn-v2 .lawn.ready .prize{visibility:hidden}
+#ripple-lawn-v2 .lawn.started .prize,#ripple-lawn-v2 .lawn.done .prize{visibility:visible}
+#ripple-lawn-v2 .result:not(.show){visibility:hidden}
+#ripple-lawn-v2 .result .code{margin:10px 0 18px}
+#ripple-lawn-v2 .prize .big{font-size:clamp(26px,8vw,48px);overflow-wrap:anywhere}
+#ripple-lawn-v2 .btn[aria-disabled="true"]{background:#DCE5D9;color:#475444;pointer-events:none;box-shadow:none}
+#ripple-lawn-v2 .fine{color:#6B7683;line-height:1.5}
+#ripple-lawn-v2 .trust{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:18px;font-size:12px;text-align:center}
+#ripple-lawn-v2 #errorState{max-width:420px;text-align:center;padding:24px;background:white;border:1px solid #ECE8E1;border-radius:20px}
+#ripple-lawn-v2 #errorBody{margin-top:10px;line-height:1.5}
+#ripple-lawn-v2 #copyBtn{padding:8px 12px;margin-left:8px;border:1px solid #D9D4CB;border-radius:8px;background:white;cursor:pointer}
+.c-section:has(#ripple-lawn-v2),.c-row:has(#ripple-lawn-v2),.c-column:has(#ripple-lawn-v2),.c-custom-code:has(#ripple-lawn-v2){min-width:0!important;max-width:100%!important}
+#ripple-lawn-v2 #fallbackAddress input{width:100%;padding:12px;font:inherit;border:1px solid #DDE8D7;border-radius:10px} #ripple-lawn-v2 #fallbackAddress button{padding:12px;background:#2E9E4F;color:white;border:0;border-radius:10px;cursor:pointer}
+</style>
+<div id="ripple-lawn-v2">
+
+<div class="brand" id="brand"><span id="wordmark"></span></div><div id="loadingState" role="status">Checking your offer…</div><div id="errorState" class="hidden" role="alert"><h2 id="errorTitle"></h2><p id="errorBody"></p><button id="retryOffer" type="button" style="margin-top:16px;padding:12px 18px;border-radius:10px;border:0;background:#2E9E4F;color:white;cursor:pointer">Try again</button></div><div id="offer" class="hidden"><span class="eyebrow">Neighbor-only offer</span>
+<h1>Mow the lawn.<br>Reveal your offer on <span id="streetName">your street</span>.</h1>
+<p class="sub">Drag the mower across the grass. Reveal your neighbor-only lawn care offer.</p>
+
+<div class="card"><div id="scratchCard">
+  <div class="lawn" id="lawn">
+    <div class="prize" id="prize" aria-hidden="true">
+      <div>
+        <div class="tag">YOUR DEAL</div>
+        <div class="big" id="prizeLabel"></div>
+        <div class="lbl" id="prizeSub"></div>
+      </div>
+    </div>
+    <canvas id="cut"></canvas>
+    <canvas id="grass"></canvas>
+    <canvas id="fx"></canvas>
+    <div class="hint"><span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h11l3-6 2 1-2 5M4 14v4m11-4v4"/><circle cx="7" cy="19" r="2"/><circle cx="14" cy="19" r="2"/></svg>
+      Drag to mow
+    </span></div>
+    <!-- mower sprite -->
+    <svg class="mower" id="mower" viewBox="0 0 92 70" aria-hidden="true">
+      <!-- handle -->
+      <path d="M58 30 L84 8" stroke="#2B3440" stroke-width="5" stroke-linecap="round"/>
+      <path d="M80 6 L90 12" stroke="#2B3440" stroke-width="5" stroke-linecap="round"/>
+      <!-- deck -->
+      <path d="M8 40 Q8 26 22 26 H54 Q68 26 68 40 V50 H8 Z" fill="#E3473B"/>
+      <path d="M8 40 Q8 26 22 26 H54 Q68 26 68 40 V44 H8 Z" fill="#F0665A"/>
+      <rect x="10" y="48" width="58" height="6" rx="2" fill="#B5342A"/>
+      <!-- engine -->
+      <rect x="26" y="14" width="22" height="16" rx="4" fill="#2B3440"/>
+      <rect x="30" y="10" width="6" height="6" rx="1.5" fill="#5B6675"/>
+      <!-- blade under deck -->
+      <g class="blade" style="transform-origin:38px 52px"><rect x="22" y="50" width="32" height="4" rx="2" fill="#3C4654"/></g>
+      <!-- wheels -->
+      <g class="wheel" style="transform-origin:18px 58px"><circle cx="18" cy="58" r="10" fill="#2B3440"/><circle cx="18" cy="58" r="5" fill="#8C96A4"/><path d="M18 50v16M10 58h16" stroke="#2B3440" stroke-width="2"/></g>
+      <g class="wheel" style="transform-origin:58px 58px"><circle cx="58" cy="58" r="10" fill="#2B3440"/><circle cx="58" cy="58" r="5" fill="#8C96A4"/><path d="M58 50v16M50 58h16" stroke="#2B3440" stroke-width="2"/></g>
+    </svg>
+  </div>
+
+  <div class="meter">
+    <div class="row"><span>Lawn mowed</span><b id="pct">0%</b></div>
+    <div class="track"><div class="fill" id="fill"></div></div>
+  </div>
+
+  <button id="revealOffer" type="button">Reveal without mowing</button></div>
+  <form id="fallbackAddress" class="hidden" style="margin-top:18px;display:grid;gap:10px">
+    <p>Where would you like lawn care?</p>
+    <input name="address" aria-label="Street address" placeholder="Street address" autocomplete="address-line1" required maxlength="200">
+    <input name="city" aria-label="City" placeholder="City" autocomplete="address-level2" required maxlength="100">
+    <input name="state" aria-label="Two-letter state" placeholder="State (e.g. NC)" autocomplete="address-level1" required pattern="[A-Za-z]{2}" maxlength="2">
+    <input name="postal_code" aria-label="ZIP code" placeholder="ZIP code" autocomplete="postal-code" required pattern="[0-9]{5}(-[0-9]{4})?">
+    <button type="submit">Save service address</button><p id="addressStatus" role="status"></p>
+  </form>
+  <div class="result" id="reveal" aria-live="polite">
+    <div id="resultTitle" style="font-weight:800;font-size:20px;letter-spacing:-.01em">Nice stripes. Your deal is locked in.</div>
+    <div id="codeRow" class="hidden"><div class="code" id="promoCode"></div><button id="copyBtn" type="button">Copy</button></div>
+    <a class="btn" id="ctaBtn" href="#">Claim it — book my mow →</a>
+    <div class="fine" id="fine">One offer per household. Applies to new customers within our service area. Your code is issued when you book.</div>
+  </div>
+</div>
+
+<div class="trust"></div></div><div class="powered">Powered by BizLab · Mower v2</div>
+
+</div>
+<script>
+(function () {
+  const DEMO = new URLSearchParams(location.search).get('demo') === '1';
+  const DEMO_TOKEN = 'demo-lawn-care';
+  const demoData = {
+    token: DEMO_TOKEN, street:'Oakwood Drive', brand:{name:'Evergreen Lawn Care · Demo',logo:null},
+    prize:{label:'$25 OFF',sub:'your first lawn care service'}, theme:{},
+    canBook:true,claimed:false,revealed:false,
+    bookUrl:'https://ripple.bizlabsolutions.ai/lawn-care/booking-now?demo=1',
+    address:{full:'123 Oakwood Drive',city:'Sample town',state:'',postal_code:''}
+  };
+  async function pageFetch(url, options) {
+    if (!DEMO) return fetch(url, options);
+    // Demo requests never reach Ripple or the CRM.
+    const route=String(url).split('/').pop();
+    let body={};try{body=JSON.parse(options.body||'{}');}catch(_){}
+    const data=route==='claim'?{ok:true,promoCode:'LAWN-DEMO',bookingWindow:body.booking_window,bookingDate:body.booking_date}:route==='reveal'?{ok:true}:demoData;
+    return {ok:true,status:200,json:async()=>data};
+  }
+
+  // ==========================================================================
+  // Config
+  // ==========================================================================
+  if(DEMO){const badge=document.createElement('div');badge.textContent='DEMO · SAMPLE OFFER · NO LIVE BOOKING';badge.style.cssText='padding:10px 16px;text-align:center;font:700 11px system-ui;color:#17592B;background:#E8F4E7;width:100%;';document.getElementById('ripple-lawn-v2').prepend(badge);}
+  const FN_BASE = 'https://dhizayohljxioxxzkhty.supabase.co/functions/v1/landing';
+  // The booking page comes back from /arrive (per-client override, else the
+  // platform default). This constant is only a fallback if the server omits it.
+  let BOOK_PAGE = 'https://ripple.bizlabsolutions.ai/lawn-care/booking-now';
+
+  const params = new URLSearchParams(location.search);
+  // The QR carries a signed batch reference. Street, prize and branding all
+  // come back from the server — nothing here is trusted from the URL, because
+  // a visitor can edit any of it.
+  // The QR carries ONE parameter: d=<batch>.<addrHash>.<prizeIdx>.<sig>
+  //
+  // Not four separate params, because thanks.io URL-encodes whatever it merges
+  // into qrcode_url — an '&' becomes %26 and an '=' becomes %3D, so a
+  // multi-param payload arrives as a single meaningless key. Dots survive
+  // encoding untouched.
+  //
+  // The four-param form is still accepted for anything already printed.
+  let batch = '', addr = '', prizeIdx = '', sig = '';
+  const packed = params.get('d') || '';
+  if (packed) {
+    const bits = packed.split('.');
+    batch = bits[0] || '';
+    addr = bits[1] || '';
+    prizeIdx = bits[2] || '';
+    sig = bits[3] || '';
+  } else {
+    batch = params.get('b') || params.get('batch') || '';
+    addr = params.get('a') || '';
+    prizeIdx = params.get('p') || '';
+    sig = params.get('s') || params.get('sig') || '';
+  }
+  if(DEMO){batch='DEMO';addr='demo';sig='demo';}
+  // Lawn appearance is fixed for this lawn-care page.
+  
+
+  // Keyed per card, not per batch: neighbours on one street share a batch.
+  const TOKEN_KEY = 'ripple_visit_' + batch + '_' + addr;
+  let visitToken = null;
+  try { if(!DEMO) visitToken = localStorage.getItem(TOKEN_KEY); } catch (_) { /* private mode */ }
+
+  const root = document.getElementById('ripple-lawn');
+  const $ = (id) => root.querySelector('[id="' + id + '"]');
+  let prizeState = null;
+
+  // ==========================================================================
+  // Theme — colours and copy per client, from config.theme. Everything is
+  // optional: anything absent keeps the platform look. Colours are validated
+  // as hex before being written into CSS variables, so a bad value in config
+  // cannot break the page or inject anything.
+  // ==========================================================================
+  const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+  function applyTheme(theme) {
+    if (!theme || typeof theme !== 'object') return;
+    const c = theme.colors || {};
+    const map = { bg: '--bg', card: '--card', accent: '--green-dark', cta: '--green', ink: '--ink' };
+    Object.keys(map).forEach((k) => {
+      if (c[k] && HEX.test(String(c[k]))) {
+        $("ripple-lawn").style.setProperty(map[k], c[k]);
+      }
+    });
+    const copy = theme.copy || {};
+    if (copy.eyebrow) document.querySelector('#ripple-lawn-v2 .eyebrow').textContent = copy.eyebrow;
+    if (copy.sub) document.querySelector('#ripple-lawn-v2 .sub').textContent = copy.sub;
+    if (copy.cta) $('ctaBtn').textContent = copy.cta + ' \u2192';
+    if (Array.isArray(copy.trust) && copy.trust.length) {
+      document.querySelector('#ripple-lawn-v2 .trust').innerHTML =
+        copy.trust.slice(0, 4).map((t) => '<span>' + String(t).replace(/[<>&]/g, '') + '</span>').join('');
+    }
+  }
+
+  // Headline is templated so a client can reword it and keep the street.
+  function applyHeadline(theme, street) {
+    const tpl = (theme && theme.copy && theme.copy.headline) || null;
+    if (!tpl) { if (street) $('streetName').textContent = street; return; }
+    const h1 = document.querySelector('#ripple-lawn-v2 h1');
+    const safe = String(tpl).replace(/[<>&]/g, '');
+    const parts = safe.split('{street}');
+    h1.textContent = '';
+    h1.appendChild(document.createTextNode(parts[0] || ''));
+    const span = document.createElement('span');
+    span.className = 'street';
+    span.id = 'streetName';          // keep the id: the rebuilt headline must
+    span.textContent = street || 'your street';   // stay addressable like the default one
+    h1.appendChild(span);
+    if (parts.length > 1) h1.appendChild(document.createTextNode(parts.slice(1).join('{street}')));
+    else span.remove();
+  }
+
+  function showError(title, body) {
+    $('loadingState').classList.add('hidden');
+    $('offer').classList.add('hidden');
+    $('errorTitle').textContent = title;
+    $('errorBody').textContent = body || '';
+    $('errorState').classList.remove('hidden');
+  }
+
+  // ==========================================================================
+  // Arrival — the server rolls (or re-reads) the prize
+  // ==========================================================================
+  async function arrive() {
+    if (!batch || !addr || !sig) {
+      showError('This link is incomplete', 'Please scan the QR code on your postcard again.');
+      return;
+    }
+    $('errorState').classList.add('hidden');
+    $('loadingState').classList.remove('hidden');
+    let data;
+    try {
+      const res = await pageFetch(FN_BASE + '/arrive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ b: batch, a: addr, p: prizeIdx, s: sig, token: visitToken })
+      });
+      data = await res.json();
+      // A verified arrival rejected for inventory may use the existing same-batch fallback.
+      // Invalid signatures never enter this path. The server decides prize availability.
+      if (res.status === 409) {
+        const fb = await pageFetch(FN_BASE + '/fallback', {
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({b:batch,token:visitToken})
+        });
+        const fallback = await fb.json();
+        if (fb.ok && fallback.token && fallback.prize) data = fallback;
+        else { showError('Your street’s offers are currently unavailable', 'Please try again later. No prize has been claimed.'); return; }
+      }
+      if (!res.ok && !data.fallback) {
+        showError('This offer isn\u2019t available', data.error || 'Please check the code on your postcard.');
+        return;
+      }
+    } catch (e) {
+      showError('We couldn\u2019t reach the offer', 'Check your connection and try again.');
+      return;
+    }
+
+    if (!data || !data.token || !data.prize || typeof data.prize.label !== 'string') {
+      showError('This offer could not be loaded', 'Please scan your postcard again or try again later.');
+      return;
+    }
+    prizeState = data;
+    applyTheme(data.theme);
+    if (data.bookUrl && !/^https:\/\/ripple\.bizlabsolutions\.ai\/booking-now\/?(?:[?#]|$)/i.test(data.bookUrl)) BOOK_PAGE = data.bookUrl;
+
+    // Same prize on every later visit — the token is what makes re-scratching
+    // impossible to farm.
+    try { if (!DEMO && data.token) localStorage.setItem(TOKEN_KEY, data.token); } catch (_) {}
+
+    // Branding
+    if (data.brand && data.brand.logo) {
+      const img = document.createElement('img');
+      img.src = data.brand.logo;
+      img.addEventListener('error', function(){ $('brand').textContent = data.brand.name || ''; });
+      img.alt = data.brand.name || '';
+      $('brand').innerHTML = '';
+      $('brand').appendChild(img);
+    } else {
+      $('wordmark').textContent = (data.brand && data.brand.name) || '';
+    }
+
+    applyHeadline(data.theme, data.street);
+    $('prizeLabel').textContent = data.prize.label;
+    $('prizeSub').textContent = data.prize.sub || '';
+
+    $('loadingState').classList.add('hidden');
+    $('offer').classList.remove('hidden');
+    if (data.promoCode) { $('promoCode').textContent = data.promoCode; $('codeRow').classList.remove('hidden'); $('fine').textContent = 'Show this code when you book. One per household.'; }
+
+    // Already claimed: show what they won, skip the scratch entirely. Offering
+    // the card again would imply a second prize is available.
+    if (data.claimed) {
+      $('scratchCard').classList.add('hidden');
+      $('resultTitle').textContent = 'Your lawn care offer has been claimed.';
+      $('reveal').classList.add('show');
+      if (data.promoCode) {
+        $('codeRow').classList.remove('hidden');
+        $('promoCode').textContent = data.promoCode;
+      }
+      $('fine').textContent = 'You\u2019ve already claimed this offer. Show this code when we arrive.';
+      $('ctaBtn').textContent = 'View my booking →';
+    }
+
+    setupCta();
+    if (data.fallback && data.needsAddress) {
+      const form = $('fallbackAddress');
+      form.classList.remove('hidden');
+      $('ctaBtn').setAttribute('aria-disabled','true');
+      $('fine').textContent = 'Enter your service address to continue with this location’s offer.';
+    }
+    if (data.claimed) return;
+    done=false; mowed=0; lawnInitialized=false; mowGestureStarted=false; mowerDistance=0;
+    lawn.classList.remove('done','active','started','ready');
+    $('reveal').classList.remove('show');
+    fill.style.width='0%'; pct.textContent='0%';
+    size();
+    // Replay the mowing interaction on every unclaimed visit. The backend keeps
+    // the same prize and records reveal only once; revisiting cannot reroll it.
+  }
+
+  function setupCta() {
+    const cta = $('ctaBtn');
+    if (!prizeState.canBook) {
+      // No calendar configured yet — a disabled button beats a 404.
+      cta.setAttribute('aria-disabled', 'true');
+      cta.removeAttribute('href');
+      cta.textContent = 'Booking opens soon';
+      $('fine').textContent = 'Your offer is saved. Please contact this lawn care location to arrange your visit.';
+      return;
+    }
+    try {
+      const url = new URL(BOOK_PAGE, location.href);
+      if (!/^https?:$/.test(url.protocol) || !prizeState.token) throw Error('Invalid booking destination');
+      url.searchParams.set('t', prizeState.token);
+      cta.href = url.href;
+    } catch (_) { cta.removeAttribute('href'); cta.setAttribute('aria-disabled', 'true'); cta.textContent = 'Booking unavailable'; }
+  }
+
+  
+
+  var lawn = $('lawn');
+  var cutC = $('cut'), grassC = $('grass'), fxC = $('fx');
+  var cut = cutC.getContext('2d'), grass = grassC.getContext('2d'), fx = fxC.getContext('2d');
+  var mower = $('mower'), fill = $('fill'), pct = $('pct');
+  var W, H, dpr = Math.min(window.devicePixelRatio||1, 2), done = false, mowed = 0, lawnInitialized = false, mowGestureStarted = false, mowerDistance = 0;
+  var MOW_W = 54; // cut width in CSS px
+
+  function size(){
+    if (!prizeState || prizeState.claimed) return;
+    var previous=document.createElement('canvas'); previous.width=grassC.width; previous.height=grassC.height;
+    if(lawnInitialized && previous.width) previous.getContext('2d').drawImage(grassC,0,0);
+    var rect = lawn.getBoundingClientRect(); W = rect.width; H = rect.height;
+    if (W < 1 || H < 1) return;
+    [cutC,grassC,fxC].forEach(function(c){ c.width = W*dpr; c.height = H*dpr; c.getContext('2d').setTransform(dpr,0,0,dpr,0,0); });
+    drawCutLayer(); drawGrass();
+    if (done) grass.clearRect(0,0,W,H);
+    else if(lawnInitialized && previous.width) { grass.globalCompositeOperation="source-over"; grass.clearRect(0,0,W,H); grass.drawImage(previous,0,0,W,H); grass.globalCompositeOperation="destination-out"; }
+    lawnInitialized = true;
+    lawn.classList.add('ready');
+  }
+
+  // layer 1: mown stripes (the pattern behind the prize, only visible around text)
+  function drawCutLayer(){
+    cut.clearRect(0,0,W,H);
+    var stripe = 34;
+    for (var y=-H; y<H*2; y+=stripe){
+      cut.fillStyle = (Math.round(y/stripe)%2===0) ? 'rgba(0,0,0,.0)' : 'rgba(0,0,0,.08)';
+      cut.save(); cut.translate(W/2,H/2); cut.rotate(-0.35); cut.fillRect(-W*1.5, y-H/2, W*3, stripe); cut.restore();
+    }
+    // soft vignette so prize text pops
+    var g = cut.createRadialGradient(W/2,H/2,20,W/2,H/2,W*0.7);
+    g.addColorStop(0,'rgba(0,0,0,.18)'); g.addColorStop(1,'rgba(0,0,0,0)');
+    cut.fillStyle = g; cut.fillRect(0,0,W,H);
+  }
+
+  // layer 2: tall grass overlay (gets erased)
+  function drawGrass(){
+    grass.globalCompositeOperation="source-over";
+    grass.clearRect(0,0,W,H);
+    grass.fillStyle = '#3F9A4F'; grass.fillRect(0,0,W,H);
+    var blades = Math.floor(W*H/22);
+    for (var i=0;i<blades;i++){
+      var x = Math.random()*W, y = Math.random()*H + 6, h = 8+Math.random()*16, lean = (Math.random()-0.5)*7;
+      var shade = 48 + Math.random()*40, light = 110 + Math.random()*60;
+      grass.strokeStyle = 'rgb('+shade+','+light+','+(shade+10)+')';
+      grass.lineWidth = 1.6; grass.beginPath(); grass.moveTo(x,y); grass.quadraticCurveTo(x+lean*0.4, y-h*0.6, x+lean, y-h); grass.stroke();
+    }
+    // a few dandelions
+    for (var d=0; d<Math.floor(W/60); d++){
+      var dx = 20+Math.random()*(W-40), dy = 20+Math.random()*(H-40);
+      grass.fillStyle = '#F5C542'; grass.beginPath(); grass.arc(dx,dy,4.5,0,7); grass.fill();
+      grass.fillStyle = '#FFE38A'; grass.beginPath(); grass.arc(dx,dy,2,0,7); grass.fill();
+    }
+    grass.globalCompositeOperation = 'destination-out';
+  }
+
+  // ----- clippings -----
+  var parts = [], fxRunning=false;
+  var reduced=matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function spawn(x,y,vx,vy){
+    if(reduced || document.hidden) return;
+    if(!fxRunning){fxRunning=true;requestAnimationFrame(tick);}
+    for (var i=0;i<4;i++) parts.push({x:x+(Math.random()-.5)*20, y:y+10, vx:(Math.random()-.5)*2.2 - vx*0.25, vy:-2-Math.random()*2.5 - Math.abs(vy)*0.1, life:1, r:1.5+Math.random()*2, c: Math.random()<.85?'#8FD88F':'#F5C542'});
+  }
+  function tick(){
+    fx.clearRect(0,0,W,H);
+    for (var i=parts.length-1;i>=0;i--){
+      var p=parts[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.18; p.life-=0.03;
+      if (p.life<=0){ parts.splice(i,1); continue; }
+      fx.globalAlpha=p.life; fx.fillStyle=p.c; fx.beginPath(); fx.arc(p.x,p.y,p.r,0,7); fx.fill();
+    }
+    fx.globalAlpha=1;
+    if(parts.length && !document.hidden) requestAnimationFrame(tick); else fxRunning=false;
+  }
+
+  // ----- mowing -----
+  var last=null, moveTimer=null, measureTimer=null;
+  function pos(e){ var r=lawn.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+  function cutAt(a,b){
+    grass.globalCompositeOperation='destination-out';
+    grass.lineCap='round'; grass.lineJoin='round'; grass.lineWidth=MOW_W; grass.strokeStyle='rgba(0,0,0,1)';
+    grass.beginPath(); grass.moveTo(a.x,a.y); grass.lineTo(b.x,b.y); grass.stroke();
+  }
+  function measure(){
+    if (done || !lawnInitialized || !mowGestureStarted || mowerDistance < 10) return;
+    var data = grass.getImageData(0,0,grassC.width,grassC.height).data, clear=0, step=16;
+    for (var i=3;i<data.length;i+=4*step) if (data[i]<40) clear++;
+    mowed = clear/(data.length/(4*step));
+    var p = Math.min(100, Math.round(mowed*100));
+    fill.style.width = p+'%'; pct.textContent = p+'%';
+    if (mowed >= 0.6) finish();
+  }
+  function finish(record=true, explicitReveal=false){
+    if (!explicitReveal && (!mowGestureStarted || mowerDistance < 10)) return;
+    if (done || !prizeState || prizeState.claimed) return;
+    if(record && prizeState.token) pageFetch(FN_BASE+"/reveal",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token:prizeState.token}),keepalive:true}).catch(function(){});
+    $("revealOffer").hidden=true;
+    $("prize").removeAttribute("aria-hidden");
+    done = true; lawn.classList.add('done'); lawn.classList.remove('active');
+    // sweep the rest away
+    var y=-MOW_W;
+    (function sweep(){
+      cutAt({x:-20,y:y},{x:W+20,y:y}); y+=MOW_W*0.7;
+      for (var i=0;i<6;i++) spawn(Math.random()*W, y, 0, 0);
+      if (y < H+MOW_W && !reduced) requestAnimationFrame(sweep); else { grass.clearRect(0,0,W,H); fill.style.width='100%'; pct.textContent='100%'; $('reveal').classList.add('show'); }
+    })();
+    if (navigator.vibrate) navigator.vibrate([30,40,30]);
+  }
+
+  lawn.addEventListener('pointerdown', function(e){
+    if (done || !prizeState || !lawnInitialized || !e.isPrimary) return; lawn.setPointerCapture(e.pointerId); mowGestureStarted=true; lawn.classList.add('active','started');
+    last = pos(e); mower.style.left=last.x+'px'; mower.style.top=last.y+'px'; cutAt(last,last);
+  });
+  lawn.addEventListener('pointermove', function(e){
+    var p = pos(e);
+    if (!done){ mower.style.left=p.x+'px'; mower.style.top=p.y+'px'; }
+    if (!last || done) return;
+    var vx=p.x-last.x, vy=p.y-last.y;
+    mowerDistance += Math.hypot(vx,vy);
+    cutAt(last,p); spawn(p.x,p.y,vx,vy);
+    mower.classList.add('moving'); clearTimeout(moveTimer); moveTimer=setTimeout(function(){mower.classList.remove('moving')},120);
+    if (vx<0) mower.style.transform='translate(-46px,-40px) scaleX(-1)'; else if (vx>0) mower.style.transform='translate(-46px,-40px)';
+    last = p;
+    if (!measureTimer) measureTimer=setTimeout(function(){measureTimer=null; measure();},90);
+  });
+  function up(){ last=null; mower.classList.remove('moving'); measure(); }
+  lawn.addEventListener('pointerup', up); lawn.addEventListener('pointercancel', up); lawn.addEventListener('lostpointercapture', up); lawn.addEventListener('pointerleave', function(){ last=null; });
+
+
+  $('revealOffer').addEventListener('click',function(){finish(true,true);});
+  $('copyBtn').addEventListener('click',async function(){try {await navigator.clipboard.writeText($('promoCode').textContent);this.textContent='Copied!';}catch(_){this.textContent='Select code to copy';}});
+  window.addEventListener('resize',size);
+  if (window.ResizeObserver) { const observer=new ResizeObserver(()=>size()); observer.observe(lawn); }
+  $('retryOffer').addEventListener('click', function(){location.reload();});
+  $('fallbackAddress').addEventListener('submit',async function(e){
+    e.preventDefault();const button=this.querySelector('button');if(button.disabled)return;button.disabled=true;
+    try {
+      const fields=new FormData(this);
+      const response=await pageFetch(FN_BASE+'/fallback-address',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:prizeState.token,address:fields.get('address'),city:fields.get('city'),state:fields.get('state'),postal_code:fields.get('postal_code')})});
+      const result=await response.json();if(!response.ok)throw Error(result.error||'Please check your address.');
+      this.classList.add('hidden');prizeState.needsAddress=false;
+      if(prizeState.canBook)$('ctaBtn').removeAttribute('aria-disabled');
+      $('fine').textContent='One offer per household. Your code is issued when you book.';
+    }catch(error){$('addressStatus').textContent=error.message||'Please try again.';}finally{button.disabled=false;}
+  });
+  arrive();
+})();
+</script>
