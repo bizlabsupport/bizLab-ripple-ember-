@@ -28,3 +28,6 @@ verify_jwt = true
 
 [functions.ember-fieldroutes-backfill]
 verify_jwt = false
+
+[functions.ripple-admin-business-niches]
+verify_jwt = true
