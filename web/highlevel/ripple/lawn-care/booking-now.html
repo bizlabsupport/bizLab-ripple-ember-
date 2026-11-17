@@ -1,3 +1,4 @@
+<!-- LAWN CARE BOOKING PAGE ONLY: /lawn-care/booking-now. Replace all existing scratch/booking custom code on that page with this fragment. -->
 <!-- Production Lawn Care booking fragment. Paste into one HighLevel Custom Code element at /lawn-care/booking-now. Requires the t token from the scratch card. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -380,7 +381,23 @@
 <script>
 
 (function () {
-  const DEMO = new URLSearchParams(location.search).get('demo') === '1';
+  // HighLevel can render custom code in a same-origin frame. Read the visible
+  // page URL when available; never take a token from another site's referrer.
+  function pageParameters() {
+    const urls=[location.href];
+    try { if(window.top!==window && window.top.location.href) urls.unshift(window.top.location.href); } catch (_) {}
+    try { if(window.parent!==window && window.parent.location.href) urls.push(window.parent.location.href); } catch (_) {}
+    try {
+      const ref=new URL(document.referrer);
+      if(ref.origin===location.origin && ref.pathname.replace(/\/$/,'')==='/lawn-care/booking-now') urls.push(ref.href);
+    } catch (_) {}
+    const combined=new URLSearchParams();
+    for(const raw of urls){try{const url=new URL(raw);for(const key of ['t','demo']){const value=url.searchParams.get(key);if(value&&!combined.has(key))combined.set(key,value);}}catch(_){}}
+    return combined;
+  }
+
+  const PAGE_PARAMS = pageParameters();
+  const DEMO = PAGE_PARAMS.get('demo') === '1';
   const DEMO_TOKEN = 'demo-lawn-care';
   const demoData = {
     token: DEMO_TOKEN, street:'Oakwood Drive', brand:{name:'Evergreen Lawn Care · Demo',logo:null},
@@ -403,7 +420,7 @@
   const root = document.getElementById('ripple-booking');
   const $ = (id) => root.querySelector('[id="'+id+'"]');
 
-  const token = DEMO ? DEMO_TOKEN : new URLSearchParams(location.search).get('t') || '';
+  const token = DEMO ? DEMO_TOKEN : (PAGE_PARAMS.get('t') || '').trim();
 
   // Same theme contract as the landing page, so a client's two pages match.
   const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
