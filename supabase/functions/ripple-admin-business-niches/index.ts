@@ -18,7 +18,7 @@ Deno.serve(async(req:Request)=>{
   if(b.action==='list'){
    const [n,l]=await Promise.all([
     db.from('business_niches').select('*').order('name'),
-    db.from('config').select('location_id,client_name,business_niche_id,landing_url,booking_page_url').not('location_id','is',null).neq('location_id','').not('location_id','like','company:%').order('client_name')
+    db.from('config').select('location_id,client_name,business_niche_id,landing_url,booking_page_url,theme,prize_weights').not('location_id','is',null).neq('location_id','').not('location_id','like','company:%').order('client_name')
    ]);
    if(n.error||l.error)throw n.error||l.error;
    return json({ok:true,niches:n.data,locations:l.data});
