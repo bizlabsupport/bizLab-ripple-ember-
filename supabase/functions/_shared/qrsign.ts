@@ -59,3 +59,4 @@ export async function buildQrPayload(
   const sig = await signPayload(secret, parts);
   return `b=${parts.batch}&a=${parts.addr}&p=${parts.prize}&s=${sig}`;
 }
+
