@@ -1,3 +1,4 @@
+<!-- LAWN CARE SCRATCH PAGE ONLY: /lawn-care/scratch-card. Do not paste on booking-now. -->
 <!-- Ripple Lawn Care scratch card — paste this entire fragment into one HighLevel Custom Code element.
 Uses the existing landing/arrive and landing/reveal endpoints. Configure this location's
 logo, prize pool and booking URL in Ripple. Publish on a separate lawn-care page.
@@ -356,7 +357,8 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
     }
     if (data.claimed) return;
     size();
-    if (data.revealed) finish(false);
+    // Replay the mowing interaction on every unclaimed visit. The backend keeps
+    // the same prize and records reveal only once; revisiting cannot reroll it.
   }
 
   function setupCta() {
