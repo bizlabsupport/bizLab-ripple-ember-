@@ -1,0 +1,99 @@
+<!-- Add ONCE at the end of the Super Admin custom code, AFTER the existing four-tab navigation. -->
+<style>
+#rsa-panel-niches{font:14px/1.5 'Nunito Sans',system-ui,sans-serif;color:#00263d}
+#rsa-panel-niches *{box-sizing:border-box}
+#rsa-panel-niches [hidden]{display:none!important}
+#rsa-panel-niches .bn-card{border:1px solid #dce5ec;border-radius:14px;padding:22px;background:white;margin-bottom:20px}
+#rsa-panel-niches h2{margin:0 0 6px;font-size:23px}#rsa-panel-niches h3{margin:0 0 12px;font-size:17px}
+#rsa-panel-niches p{color:#617382;margin:0 0 16px}
+#rsa-panel-niches label{display:block;font-weight:700;margin:12px 0 5px}
+#rsa-panel-niches input:not([type=checkbox]),#rsa-panel-niches select{width:100%;font:inherit;padding:11px;border:1px solid #c9d6e1;border-radius:8px;background:white;color:#00263d}
+#rsa-panel-niches button{font:700 13px system-ui;padding:10px 15px;border:1px solid #c9d6e1;border-radius:8px;background:#fff;color:#00263d;cursor:pointer}
+#rsa-panel-niches button.primary{background:#00263d;color:white;border-color:#00263d}
+#rsa-panel-niches button:disabled{opacity:.5;cursor:wait}
+#rsa-panel-niches .bn-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#rsa-panel-niches .bn-actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+#rsa-panel-niches .bn-list{display:grid;gap:12px}
+#rsa-panel-niches .bn-item{padding:16px;border:1px solid #dce5ec;border-radius:10px;overflow-wrap:anywhere}
+#rsa-panel-niches .bn-item a{display:block;color:#007dc9;font-size:12px;margin:6px 0}
+#rsa-panel-niches table{width:100%;border-collapse:collapse;min-width:650px;text-align:left}
+#rsa-panel-niches td,#rsa-panel-niches th{padding:12px;border-bottom:1px solid #dce5ec;vertical-align:top}
+#rsa-panel-niches th{background:#f4f7fa;font-size:12px}
+#rsa-panel-niches small{display:block;color:#617382;margin-top:4px}
+#rsa-panel-niches .bn-scroll{overflow-x:auto}
+#rsa-panel-niches #bn-status{margin:14px 0;min-height:22px;font-weight:700}
+@media(max-width:650px){#rsa-panel-niches .bn-grid{grid-template-columns:1fr}}
+</style>
+<section id="rsa-panel-niches" class="rsa-panel" role="tabpanel" aria-labelledby="rsa-tab-niches" hidden>
+ <div class="bn-card"><h2>Business Niches</h2><p>Manage the types of businesses Ripple supports and the customer pages each niche uses.</p>
+ <div id="bn-status" role="status" aria-live="polite">Loading settings...</div>
+ <button id="bn-refresh" type="button">Refresh</button>
+ </div>
+ <div class="bn-card"><h3 id="bn-editor-title">Add business niche</h3>
+ <form id="bn-form">
+ <label for="bn-name">Business niche name</label><input id="bn-name" required maxlength="100" placeholder="e.g. Window Cleaning">
+ <div class="bn-grid"><div><label for="bn-landing">Scratch-card URL</label><input id="bn-landing" type="url" required placeholder="https://your-domain.com/window-cleaning/scratch-card"></div>
+ <div><label for="bn-booking">Booking-page URL</label><input id="bn-booking" type="url" required placeholder="https://your-domain.com/window-cleaning/booking-now"></div></div>
+ <label><input id="bn-active" type="checkbox" checked> Available for location assignment</label>
+ <small>Create and publish both customer pages before assigning a niche. Saving a URL does not create the page.</small>
+ <div class="bn-actions"><button class="primary" type="submit" id="bn-save">Add niche</button><button type="button" id="bn-cancel">Clear / cancel</button></div>
+ </form></div>
+ <div class="bn-card"><h3>Configured niches</h3><div id="bn-list" class="bn-list"></div></div>
+ <div class="bn-card"><h3>Assign niches to locations</h3><p>Custom location page URLs take priority. Otherwise Ripple uses the assigned niche URLs, then platform defaults. Changes apply to future postcard links; printed QR codes keep their original URL.</p>
+ <div class="bn-scroll"><table><thead><tr><th>Location</th><th>Business niche</th><th>Customer page routing</th><th></th></tr></thead><tbody id="bn-locations"></tbody></table></div></div>
+</section>
+<script>
+(function(){
+ 'use strict';
+ if(window.__rippleBusinessNiches)return;window.__rippleBusinessNiches=true;
+ const root=document.getElementById('rsa-panel-niches'),$=id=>root.querySelector('#'+id);
+ let niches=[],locations=[],editing=null,client=null;
+ const status=text=>{$('bn-status').textContent=text;};
+ function element(tag,text){const e=document.createElement(tag);if(text!=null)e.textContent=text;return e;}
+ function reset(){editing=null;$('bn-form').reset();$('bn-active').checked=true;$('bn-save').textContent='Add niche';$('bn-editor-title').textContent='Add business niche';}
+ async function api(body){
+  client=typeof sb!=='undefined'?sb:window.sb;
+  if(!client?.auth||!client?.functions)throw Error('Open the authenticated Super Admin page.');
+  const auth=await client.auth.getSession();if(!auth.data?.session)throw Error('Please sign in to Super Admin.');
+  const result=await client.functions.invoke('ripple-admin-business-niches',{body});
+  if(result.error){let message=result.error.message;try{const data=await result.error.context.json();message=data.error||message}catch(_){}throw Error(message||'Unable to update niches.');}
+  if(!result.data?.ok)throw Error(result.data?.error||'Unable to update niches.');return result.data;
+ }
+ function link(url,label){const a=element('a',label+': '+url);try{if(new URL(url).protocol!=='https:')return a;}catch(_){return a;}a.href=url;a.target='_blank';a.rel='noopener noreferrer';return a;}
+ function render(){
+  $('bn-list').replaceChildren();
+  niches.forEach(n=>{const item=element('div');item.className='bn-item';const count=locations.filter(l=>l.business_niche_id===n.id).length;
+   item.append(element('strong',n.name+(n.active?'':' (inactive)')),element('small',count+' assigned location(s)'),link(n.landing_url,'Scratch card'),link(n.booking_page_url,'Booking'));
+   const edit=element('button','Edit niche');edit.type='button';edit.onclick=()=>{editing=n;$('bn-name').value=n.name;$('bn-landing').value=n.landing_url;$('bn-booking').value=n.booking_page_url;$('bn-active').checked=n.active;$('bn-save').textContent='Save changes';$('bn-editor-title').textContent='Edit '+n.name;$('bn-form').scrollIntoView({behavior:'smooth',block:'center'});};item.append(edit);$('bn-list').append(item);
+  });
+  if(!niches.length)$('bn-list').textContent='No business niches configured yet.';
+  $('bn-locations').replaceChildren();
+  locations.forEach(l=>{const row=element('tr'),name=element('td',l.client_name||l.location_id);name.append(element('small',l.location_id));row.append(name);
+   const cell=element('td'),select=element('select');select.setAttribute('aria-label','Business niche for '+(l.client_name||l.location_id));const option=element('option','Unassigned - use current pages');option.value='';select.append(option);
+   niches.filter(n=>n.active||n.id===l.business_niche_id).forEach(n=>{const opt=element('option',n.name+(n.active?'':' (inactive)'));opt.value=n.id;select.append(opt)});select.value=l.business_niche_id||'';cell.append(select);row.append(cell);
+   const routing=element('td');const n=niches.find(n=>n.id===l.business_niche_id);routing.append(element('small','Scratch: '+(l.landing_url||n?.landing_url||'Platform default')),element('small','Booking: '+(l.booking_page_url||n?.booking_page_url||'Platform default')));row.append(routing);
+   const actions=element('td'),save=element('button','Save');save.type='button';actions.append(save);row.append(actions);
+   save.onclick=async()=>{save.disabled=true;select.disabled=true;try{await api({action:'assign',location_id:l.location_id,niche_id:select.value||null});await load();status('Business niche saved for '+(l.client_name||l.location_id)+'.');}catch(e){status(e.message)}finally{save.disabled=false;select.disabled=false}};
+   $('bn-locations').append(row);
+  });
+ }
+ async function load(){status('Loading business niches...');const data=await api({action:'list'});niches=data.niches||[];locations=data.locations||[];render();status(niches.length+' business niches / '+locations.length+' connected locations.');}
+ $('bn-form').onsubmit=async e=>{e.preventDefault();if($('bn-save').disabled)return;const values={action:'saveNiche',id:editing?.id,expected_updated_at:editing?.updated_at,name:$('bn-name').value.trim(),landing_url:$('bn-landing').value.trim(),booking_page_url:$('bn-booking').value.trim(),active:$('bn-active').checked};
+  const count=editing?locations.filter(l=>l.business_niche_id===editing.id).length:0;
+  if(count&& (values.landing_url!==editing.landing_url||values.booking_page_url!==editing.booking_page_url)&&!window.confirm('Update default customer pages for '+count+' linked location(s)? Custom location URLs remain in place.'))return;
+  $('bn-save').disabled=true;try{await api(values);reset();await load();status('Business niche saved.');}catch(error){status(error.message)}finally{$('bn-save').disabled=false}
+ };
+ $('bn-cancel').onclick=reset;$('bn-refresh').onclick=()=>load().catch(e=>status(e.message));
+ function mount(){const nav=document.getElementById('rsa-tabs-nav'),body=document.querySelector('#rsa-tabs-host .rsa-tabs-body');if(!nav||!body)return false;
+  body.append(root);const tab=element('button','Business Niches');tab.type='button';tab.id='rsa-tab-niches';tab.className='rsa-tab';tab.setAttribute('role','tab');tab.setAttribute('aria-controls',root.id);tab.setAttribute('aria-selected','false');tab.tabIndex=-1;nav.append(tab);
+  function activate(){document.querySelectorAll('#rsa-tabs-host .rsa-panel').forEach(p=>p.hidden=p!==root);nav.querySelectorAll('[role=tab]').forEach(t=>{t.setAttribute('aria-selected',String(t===tab));t.tabIndex=t===tab?0:-1});const main=document.getElementById('ripple-admin-view')||document.querySelector('main');const head=main?.querySelector('.page-head');if(head){const title=head.querySelector('h1'),sub=head.querySelector('p'),actions=head.querySelector('.head-actions');if(title)title.textContent='Business Niches';if(sub)sub.textContent='Manage business types, customer page URLs and location assignments.';if(actions)actions.style.display='none';}history.replaceState(null,'',location.pathname+location.search+'#admin-niches');}
+  tab.onclick=activate;
+  nav.addEventListener('click',e=>{const selected=e.target.closest('[role=tab]');if(selected&&selected!==tab){root.hidden=true;tab.setAttribute('aria-selected','false');tab.tabIndex=-1;}});
+  nav.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;const current=e.target.closest('[role=tab]');if(!current)return;e.preventDefault();e.stopImmediatePropagation();const tabs=Array.from(nav.querySelectorAll('[role=tab]')),i=tabs.indexOf(current);const next=e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;tabs[next].click();tabs[next].focus();},true);
+  window.addEventListener('hashchange',()=>{if(location.hash==='#admin-niches')activate();else{root.hidden=true;tab.setAttribute('aria-selected','false');tab.tabIndex=-1;}});
+  if(location.hash==='#admin-niches')activate();load().catch(e=>status(e.message));return true;
+ }
+ let tries=0;function start(){if(mount())return;if(++tries<40)setTimeout(start,500);else status('Add this block after the existing Super Admin four-tab code.');}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
