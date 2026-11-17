@@ -1,0 +1,47 @@
+<!-- Append after the Business Niches addon in the existing Super Admin custom code. -->
+<style>
+#ws-body .rnm-info{border:1px solid #dce5ec;border-radius:12px;padding:15px;margin:0 0 18px;background:#f5f9fc;font:13px/1.5 system-ui,sans-serif;color:#00263d}
+#ws-body .rnm-info strong{display:block;margin-bottom:5px}
+#ws-body .rnm-info p{margin:5px 0;color:#617382}
+#ws-body .rnm-info a{color:#007dc9;overflow-wrap:anywhere;display:block;margin-top:5px}
+#ws-body .rnm-default{font-size:12px;color:#617382;margin-top:6px}
+#ws-body .rnm-btn{padding:9px 13px;border:1px solid #cad6df;background:#fff;border-radius:8px;color:#00263d;cursor:pointer;font:700 12px system-ui;margin-top:10px}
+</style>
+<script>
+(function(){
+ 'use strict';if(window.__rippleNicheManage)return;window.__rippleNicheManage=true;
+ let pendingId=null,generation=0;
+ const defaults={lawn:{headline:'Mow the lawn. Reveal your offer on {street}.',cta:'Claim it — book my mow',accent:'#17592B',interaction:'Mow to reveal'},pest:{headline:'We just protected a yard on {street}.',cta:'Protect my yard',accent:'#3FA9F5',interaction:'Swat & reveal'},generic:{headline:'Your neighbor-only offer on {street}.',cta:'Claim my offer',accent:'',interaction:'Configured customer page'}};
+ function profile(niche){if(!niche)return defaults.generic;try{const path=new URL(niche.landing_url).pathname;if(path.includes('/lawn-care/'))return defaults.lawn;if(path==='/scratch-card')return defaults.pest;}catch(_){}return defaults.generic;}
+ async function context(){const client=typeof sb!=='undefined'?sb:window.sb;if(!client?.functions)throw Error('Super Admin session unavailable.');const r=await client.functions.invoke('ripple-admin-business-niches',{body:{action:'list'}});if(r.error||!r.data?.ok)throw Error(r.data?.error||r.error?.message||'Could not load niche settings.');return r.data;}
+ const el=(tag,text)=>{const e=document.createElement(tag);if(text!=null)e.textContent=text;return e;};
+ function addLink(box,label,url){if(!url)return;try{if(new URL(url).protocol!=='https:')return;}catch(_){return;}const a=el('a',label+': '+url);a.href=url;a.target='_blank';a.rel='noopener noreferrer';box.append(a);}
+ function currentId(body){const modal=body.closest('.modal')||document.getElementById('modal-mount');const code=modal?.querySelector('.modal-head .s code');if(code?.textContent.trim())return code.textContent.trim();return pendingId;}
+ async function decorate(body){if(body.dataset.nicheDecorated)return;body.dataset.nicheDecorated='loading';const id=currentId(body),seq=++generation;if(!id){delete body.dataset.nicheDecorated;return;}
+  const summary=el('div');summary.className='rnm-info';summary.textContent='Loading business niche...';const general=body.querySelector('[data-pane="general"]');if(general)general.prepend(summary);
+  try{const data=await context();if(!body.isConnected||seq!==generation)return;const location=data.locations.find(l=>l.location_id===id);if(!location)throw Error('Location not found in niche settings.');const niche=data.niches.find(n=>n.id===location.business_niche_id),d=profile(niche),theme=location.theme||{};
+   body.dataset.nicheDecorated='ready';summary.replaceChildren(el('strong','Business niche: '+(niche?.name||'Unassigned')));
+   summary.append(el('p','Manage this assignment and niche page URLs in the Business Niches tab. Location URL overrides stay in effect.'));
+   addLink(summary,'Scratch card',location.landing_url||niche?.landing_url);addLink(summary,'Booking',location.booking_page_url||niche?.booking_page_url);
+   const $=id=>body.querySelector('#'+id);
+   const look=body.querySelector('[data-pane="look"]'),prizes=body.querySelector('[data-pane="prizes"]');
+   if(look){const intro=look.querySelector('.paneintro');if(intro)intro.textContent='Your business niche sets the default customer experience. Customize this location below. Saved custom copy, colors, logos and prizes stay with this location.';
+    const info=el('div');info.className='rnm-info';info.append(el('strong',(niche?.name||'Current page')+' experience'),el('p','Interaction: '+d.interaction+'. Blank appearance fields use the customer page defaults.'));
+    if(d===defaults.lawn)info.append(el('p','The Lawn Care page always uses the mower interaction. A legacy scratch-background value does not change the mower.'));
+    const reset=el('button','Use niche defaults for headline, button and accent');reset.type='button';reset.className='rnm-btn';reset.onclick=()=>{if(!confirm('Clear this location’s headline, button text and accent overrides? Save settings to apply.'))return;['d-headline','d-ctatext','d-accent'].forEach(id=>{const input=$(id);if(input){input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));}});};info.append(reset);look.prepend(info);
+   }
+   [['d-headline',d.headline],['d-ctatext',d.cta],['d-accent',d.accent]].forEach(([id,value])=>{const input=$(id);if(input){input.placeholder=value||'Use customer page default';const note=el('div','Default: '+(value||'customer page default'));note.className='rnm-default';input.closest('label')?.append(note);}});
+   const scratch=$('d-scratch');if(scratch){const field=scratch.closest('label');if(d===defaults.lawn){field.hidden=true;const view=el('div');view.className='field';view.append(el('strong','Reveal interaction'),el('p','Mow to reveal — interactive lawn mower'));field.after(view);}else if(d===defaults.generic){field.hidden=true;}}
+   if(prizes){const note=el('div');note.className='rnm-info';note.textContent=(location.prize_weights||[]).length?'Prize offers belong to this location. Changing a niche does not replace existing offers. Review their wording for '+(niche?.name||'this business')+'.':'No prizes configured. Add this location’s approved offers before sharing its scratch card.';prizes.prepend(note);
+    if(d===defaults.lawn){const adapt=()=>{prizes.querySelectorAll('[data-p="label"]').forEach(x=>x.placeholder='$25 OFF your first mow');prizes.querySelectorAll('[data-p="sub"]').forEach(x=>x.placeholder='Save on your first lawn mowing service.');prizes.querySelectorAll('[data-p="code_prefix"]').forEach(x=>x.placeholder='LAWN25');};adapt();const rows=$('prize-rows');if(rows){const o=new MutationObserver(adapt);o.observe(rows,{childList:true});}}
+   }
+   function paintUrls(){[['d-landing','d-landing-hint','d-landing-open',niche?.landing_url],['d-bookpage','d-bookpage-hint','d-bookpage-open',niche?.booking_page_url]].forEach(([inputId,hintId,linkId,inherited])=>{const input=$(inputId),hint=$(hintId),link=$(linkId);if(!input||!inherited)return;input.placeholder=inherited;const effective=input.value.trim()||inherited;if(hint)hint.textContent=input.value.trim()?'Custom location URL overrides the niche default.':'Inherited from '+niche.name+': '+inherited;if(link){link.href=effective;link.setAttribute('aria-disabled','false');}});}
+   paintUrls();['d-landing','d-bookpage','d-calendar','d-custom'].forEach(id=>{const input=$(id);if(input)['input','change'].forEach(event=>input.addEventListener(event,()=>queueMicrotask(paintUrls)));});
+   body.addEventListener('click',()=>queueMicrotask(paintUrls));
+  }catch(error){summary.textContent='Business niche unavailable: '+error.message;body.dataset.nicheDecorated='error';}
+ }
+ document.addEventListener('click',event=>{const manage=event.target.closest('[data-manage]');if(manage)pendingId=manage.dataset.manage;},true);
+ function scan(){const body=document.getElementById('ws-body');if(body)decorate(body);}
+ const observer=new MutationObserver(scan);function start(){const mount=document.getElementById('modal-mount');if(mount){observer.observe(mount,{childList:true});scan();}else setTimeout(start,500);}start();
+})();
+</script>
