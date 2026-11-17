@@ -22,7 +22,9 @@ Codes are issued by the existing booking/claim flow, never generated in this pag
   #ripple-lawn-v2 .sub{color:var(--muted);text-align:center;margin:10px 0 22px;font-size:15.5px;max-width:34ch}
 
   #ripple-lawn-v2 .card{width:100%;max-width:420px;background:var(--card);border:1px solid var(--line);border-radius:24px;box-shadow:0 1px 2px rgba(23,32,43,.04),0 18px 44px rgba(23,32,43,.10);padding:16px;position:relative}
-  #ripple-lawn-v2 .lawn{position:relative;width:100%;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:#5FB86E;touch-action:none;cursor:none;user-select:none;-webkit-user-select:none}
+  #ripple-lawn-v2 .lawn{position:relative;width:100%;aspect-ratio:4/3;border-radius:16px;overflow:hidden;background:#5FB86E;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+  #ripple-lawn-v2 .lawn canvas{cursor:inherit}
+  #ripple-lawn-v2 .lawn:active:not(.done){cursor:grabbing}
   #ripple-lawn-v2 .lawn.done{cursor:default}
   #ripple-lawn-v2 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
   #ripple-lawn-v2 #cut{z-index:1}#ripple-lawn-v2 #grass{z-index:2}#ripple-lawn-v2 #fx{z-index:3;pointer-events:none}
