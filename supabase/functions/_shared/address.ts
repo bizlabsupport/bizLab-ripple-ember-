@@ -94,3 +94,4 @@ export async function addressHash(
   const full = await sha1Hex(`${a}|${p}`);
   return full.slice(0, HASH_LENGTH);
 }
+
